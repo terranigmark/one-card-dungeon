@@ -3,7 +3,7 @@ import { CLASSES } from '../../engine/classes'
 
 export function StatPanel() {
   const { hero, turn, phase } = useGameState()
-  const className = hero.classId ? CLASSES[hero.classId].name : 'Adventurer'
+  const className = hero.classId && hero.classId !== 'none' ? CLASSES[hero.classId].name : 'Adventurer'
 
   return (
     <div className="panel">

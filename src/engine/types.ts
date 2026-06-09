@@ -17,7 +17,7 @@ export type Skill = 'speed' | 'attack' | 'defense' | 'range'
  */
 export type AssignSlot = 'speed' | 'attack' | 'defense' | 'range'
 
-export type ClassId = 'paladin' | 'barbarian' | 'ranger' | 'wizard'
+export type ClassId = 'paladin' | 'barbarian' | 'ranger' | 'wizard' | 'none'
 export type MonsterKind = 'spider' | 'orc' | 'skeleton' | 'demon'
 export type Difficulty = 'faithful' | 'aggressive'
 

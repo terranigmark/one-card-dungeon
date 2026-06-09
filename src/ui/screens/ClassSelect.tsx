@@ -19,7 +19,7 @@ export function ClassSelect() {
           {CLASS_LIST.map((c) => (
             <button
               key={c.id}
-              className={`class-card ${selected === c.id ? 'selected' : ''}`}
+              className={`class-card ${c.id === 'none' ? 'no-class' : ''} ${selected === c.id ? 'selected' : ''}`}
               onClick={() => dispatch({ type: 'SELECT_CLASS', classId: c.id })}
             >
               <span className="cname">{c.name}</span>
