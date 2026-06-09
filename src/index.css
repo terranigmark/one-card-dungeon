@@ -170,6 +170,7 @@ h3 {
 }
 .tile {
   position: relative;
+  container-type: size;
   border: 1px solid rgba(0, 0, 0, 0.18);
   display: flex;
   align-items: center;
@@ -244,7 +245,10 @@ h3 {
   position: absolute;
   top: -6px;
   right: -6px;
-  font-size: 0.7em;
+  /* Size relative to the tile (the square) so the token reliably covers
+     ~18% of the square's corner regardless of board size. */
+  font-size: 18cqmin;
+  line-height: 1;
   filter: drop-shadow(0 1px 1px #000);
 }
 /* unit dice sit inside a tile */
