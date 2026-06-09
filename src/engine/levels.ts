@@ -58,51 +58,51 @@ function build(s: Spec): LevelConfig {
 export const LEVELS: LevelConfig[] = [
   build({
     level: 1, side: 1, orientation: 180, kind: 'spider', walls: side1Walls, heroStart: side1Start,
-    spawns: [C(4, 2), C(3, 0)], monster: { health: 2, speed: 5, attack: 4, defense: 2, range: 3 },
+    spawns: [C(4, 2), C(3, 0)], monster: { health: 2, speed: 5, attack: 4, defense: 4, range: 3 },
   }),
   build({
     level: 2, side: 2, orientation: 180, kind: 'skeleton', walls: side2Walls, heroStart: side2Start,
-    spawns: [C(0, 1), C(2, 0)], monster: { health: 3, speed: 4, attack: 4, defense: 2, range: 4 },
+    spawns: [C(0, 1), C(2, 0)], monster: { health: 3, speed: 4, attack: 5, defense: 4, range: 4 },
   }),
   build({
     level: 3, side: 1, orientation: 0, kind: 'orc', walls: flipAll(side1Walls), heroStart: side1Start,
-    spawns: [C(4, 1)], monster: { health: 4, speed: 3, attack: 6, defense: 3, range: 2 },
+    spawns: [C(4, 1)], monster: { health: 5, speed: 3, attack: 7, defense: 7, range: 2 },
   }),
   build({
     level: 4, side: 2, orientation: 0, kind: 'demon', walls: flipAll(side2Walls), heroStart: side2Start,
-    spawns: [C(1, 0)], monster: { health: 5, speed: 4, attack: 6, defense: 3, range: 3 },
+    spawns: [C(1, 0)], monster: { health: 5, speed: 5, attack: 5, defense: 5, range: 5 },
   }),
   build({
     level: 5, side: 1, orientation: 180, kind: 'spider', walls: side1Walls, heroStart: side1Start,
-    spawns: [C(1, 0), C(4, 1), C(0, 0)], monster: { health: 3, speed: 5, attack: 4, defense: 2, range: 3 },
+    spawns: [C(1, 0), C(4, 1), C(0, 0)], monster: { health: 2, speed: 5, attack: 4, defense: 4, range: 3 },
   }),
   build({
     level: 6, side: 2, orientation: 180, kind: 'skeleton', walls: side2Walls, heroStart: side2Start,
-    spawns: [C(0, 4), C(1, 1), C(1, 0)], monster: { health: 4, speed: 4, attack: 5, defense: 3, range: 4 },
+    spawns: [C(0, 4), C(1, 1), C(1, 0)], monster: { health: 3, speed: 4, attack: 5, defense: 4, range: 4 },
   }),
   build({
     level: 7, side: 1, orientation: 0, kind: 'orc', walls: flipAll(side1Walls), heroStart: side1Start,
-    spawns: [C(2, 1), C(4, 3)], monster: { health: 5, speed: 3, attack: 7, defense: 3, range: 2 },
+    spawns: [C(2, 1), C(4, 3)], monster: { health: 5, speed: 3, attack: 7, defense: 7, range: 2 },
   }),
   build({
     level: 8, side: 2, orientation: 0, kind: 'demon', walls: flipAll(side2Walls), heroStart: side2Start,
-    spawns: [C(1, 4), C(0, 0)], monster: { health: 6, speed: 5, attack: 7, defense: 4, range: 3 },
+    spawns: [C(1, 4), C(0, 0)], monster: { health: 5, speed: 5, attack: 5, defense: 5, range: 5 },
   }),
   build({
     level: 9, side: 1, orientation: 180, kind: 'spider', walls: side1Walls, heroStart: side1Start,
-    spawns: [C(0, 0), C(2, 4), C(2, 2), C(4, 3)], monster: { health: 4, speed: 6, attack: 5, defense: 2, range: 3 },
+    spawns: [C(0, 0), C(2, 4), C(2, 2), C(4, 3)], monster: { health: 2, speed: 5, attack: 4, defense: 4, range: 3 },
   }),
   build({
     level: 10, side: 2, orientation: 180, kind: 'skeleton', walls: side2Walls, heroStart: side2Start,
-    spawns: [C(0, 3), C(1, 2), C(2, 1), C(4, 0)], monster: { health: 5, speed: 5, attack: 6, defense: 3, range: 4 },
+    spawns: [C(0, 3), C(1, 2), C(2, 1), C(4, 0)], monster: { health: 3, speed: 4, attack: 5, defense: 4, range: 4 },
   }),
   build({
     level: 11, side: 1, orientation: 0, kind: 'orc', walls: flipAll(side1Walls), heroStart: side1Start,
-    spawns: [C(1, 0), C(3, 0), C(4, 2)], monster: { health: 6, speed: 4, attack: 8, defense: 4, range: 2 },
+    spawns: [C(1, 0), C(3, 0), C(4, 2)], monster: { health: 5, speed: 3, attack: 7, defense: 7, range: 2 },
   }),
   build({
     level: 12, side: 2, orientation: 0, kind: 'demon', walls: flipAll(side2Walls), heroStart: side2Start,
-    spawns: [C(0, 3), C(0, 1), C(2, 1)], monster: { health: 7, speed: 5, attack: 8, defense: 4, range: 4 },
+    spawns: [C(0, 3), C(0, 1), C(2, 1)], monster: { health: 5, speed: 5, attack: 5, defense: 5, range: 5 },
   }),
 ]
 
