@@ -14,7 +14,7 @@ function ClassAbilityRow({ selected }: { selected: number | null }) {
   const { hero, classState, energy } = useGameState()
   const dispatch = useDispatch()
   const c = hero.classId
-  if (!c) return null
+  if (!c || c === 'none') return null
   const usedLevel = classState.usedThisLevel
   const noDice = energy.rolled.length === 0
 

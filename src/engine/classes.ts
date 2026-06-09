@@ -5,8 +5,8 @@ export interface ClassDef {
   name: string
   blurb: string
   ability: string
-  /** When the ability recharges. */
-  timing: 'level' | 'turn'
+  /** When the ability recharges. Omitted for the classless option. */
+  timing?: 'level' | 'turn'
 }
 
 export const CLASS_LIST: ClassDef[] = [
@@ -37,6 +37,12 @@ export const CLASS_LIST: ClassDef[] = [
     blurb: 'Arcane scholar of the dungeon.',
     ability: 'Once per level, reroll all energy dice.',
     timing: 'level',
+  },
+  {
+    id: 'none',
+    name: 'No Class',
+    blurb: 'Just you, three dice, and the dungeon.',
+    ability: 'No special ability or bonuses — a pure test of nerve.',
   },
 ]
 
