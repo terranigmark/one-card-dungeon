@@ -1,74 +1,25 @@
 import { useEffect } from 'react'
 import { useDispatch, useGameState, useReset } from '../state/hooks'
 import { useThemeStore, type ThemeTweaks } from '../state/themeStore'
+import { useT, useLangStore, LANGS, LANG_LABELS } from '../i18n'
 import type { Difficulty } from '../engine/types'
 
-const OPTIONS: Array<{ id: Difficulty; label: string }> = [
-  { id: 'faithful', label: 'Faithful' },
-  { id: 'aggressive', label: 'Aggressive' },
-]
+const DIFFICULTIES: Difficulty[] = ['faithful', 'aggressive']
 
-// Appearance tweaks, surfaced as picker rows. `retroOnly` rows are hidden when
-// the Modern skin is active (they only affect the pixel-art look).
+// Appearance axes, surfaced as picker rows. `retroOnly` rows are hidden when
+// the Modern skin is active (they only affect the pixel-art look). Labels for
+// the axis and each option come from the active language's bundle.
 const APPEARANCE: Array<{
   axis: keyof ThemeTweaks
-  label: string
-  options: Array<{ id: string; label: string }>
+  options: string[]
   retroOnly?: boolean
 }> = [
-  {
-    axis: 'skin',
-    label: 'Style',
-    options: [
-      { id: 'retro', label: 'Retro' },
-      { id: 'modern', label: 'Modern' },
-    ],
-  },
-  {
-    axis: 'mode',
-    label: 'Theme',
-    options: [
-      { id: 'dark', label: 'Dark' },
-      { id: 'light', label: 'Light' },
-    ],
-  },
-  {
-    axis: 'palette',
-    label: 'Palette',
-    options: [
-      { id: 'crypt', label: 'Crypt' },
-      { id: 'classic', label: 'Classic' },
-      { id: 'torchlit', label: 'Torchlit' },
-    ],
-  },
-  {
-    axis: 'type',
-    label: 'Pixel font',
-    retroOnly: true,
-    options: [
-      { id: 'arcade', label: 'Arcade' },
-      { id: 'bitmap', label: 'Bitmap' },
-      { id: 'terminal', label: 'Terminal' },
-    ],
-  },
-  {
-    axis: 'density',
-    label: 'Density',
-    options: [
-      { id: 'cozy', label: 'Cozy' },
-      { id: 'compact', label: 'Compact' },
-    ],
-  },
-  {
-    axis: 'decor',
-    label: 'Decoration',
-    retroOnly: true,
-    options: [
-      { id: 'minimal', label: 'Minimal' },
-      { id: 'standard', label: 'Standard' },
-      { id: 'ornate', label: 'Ornate' },
-    ],
-  },
+  { axis: 'skin', options: ['retro', 'modern'] },
+  { axis: 'mode', options: ['dark', 'light'] },
+  { axis: 'palette', options: ['crypt', 'classic', 'torchlit'] },
+  { axis: 'type', retroOnly: true, options: ['arcade', 'bitmap', 'terminal'] },
+  { axis: 'density', options: ['cozy', 'compact'] },
+  { axis: 'decor', retroOnly: true, options: ['minimal', 'standard', 'ornate'] },
 ]
 
 /**
@@ -81,6 +32,9 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
   const { settings } = useGameState()
   const dispatch = useDispatch()
   const reset = useReset()
+  const t = useT()
+  const lang = useLangStore((s) => s.lang)
+  const setLang = useLangStore((s) => s.setLang)
   const tweaks = useThemeStore((s) => s.tweaks)
   const setTweak = useThemeStore((s) => s.setTweak)
 
@@ -95,56 +49,71 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="drawer-scrim" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-modal="false" aria-label="Settings">
+      <aside className="drawer" role="dialog" aria-modal="false" aria-label={t.settings.title}>
         <div className="drawer-head">
-          <h2>Settings</h2>
-          <button className="drawer-close" aria-label="Close settings" onClick={onClose}>
+          <h2>{t.settings.title}</h2>
+          <button className="drawer-close" aria-label={t.settings.close} onClick={onClose}>
             ✕
           </button>
         </div>
 
         <div>
-          <h3>Enemy AI difficulty</h3>
+          <h3>{t.settings.language}</h3>
           <div className="row" style={{ marginTop: 8 }}>
-            {OPTIONS.map((o) => (
-              <button
-                key={o.id}
-                className={settings.difficulty === o.id ? 'primary' : ''}
-                onClick={() => dispatch({ type: 'SET_DIFFICULTY', difficulty: o.id })}
-              >
-                {o.label}
+            {LANGS.map((l) => (
+              <button key={l} className={lang === l ? 'primary' : ''} onClick={() => setLang(l)}>
+                {LANG_LABELS[l]}
               </button>
             ))}
           </div>
           <p className="hint" style={{ marginTop: 8 }}>
-            Faithful follows the rulebook's kiting behaviour. Aggressive coordinates monsters to
-            maximise the damage they deal each turn.
+            {t.settings.languageHint}
           </p>
         </div>
 
         <div>
-          <h3>Appearance</h3>
-          {APPEARANCE.filter((tweak) => !(tweak.retroOnly && tweaks.skin === 'modern')).map((tweak) => (
-            <div key={tweak.axis} style={{ marginTop: 12 }}>
-              <p className="hint" style={{ margin: '0 0 6px', textTransform: 'uppercase' }}>
-                {tweak.label}
-              </p>
-              <div className="row">
-                {tweak.options.map((o) => (
-                  <button
-                    key={o.id}
-                    className={tweaks[tweak.axis] === o.id ? 'primary' : ''}
-                    onClick={() => setTweak(tweak.axis, o.id)}
-                  >
-                    {o.label}
-                  </button>
-                ))}
+          <h3>{t.settings.aiDifficulty}</h3>
+          <div className="row" style={{ marginTop: 8 }}>
+            {DIFFICULTIES.map((id) => (
+              <button
+                key={id}
+                className={settings.difficulty === id ? 'primary' : ''}
+                onClick={() => dispatch({ type: 'SET_DIFFICULTY', difficulty: id })}
+              >
+                {t.difficulty[id]}
+              </button>
+            ))}
+          </div>
+          <p className="hint" style={{ marginTop: 8 }}>
+            {t.settings.aiHint}
+          </p>
+        </div>
+
+        <div>
+          <h3>{t.settings.appearance}</h3>
+          {APPEARANCE.filter((tweak) => !(tweak.retroOnly && tweaks.skin === 'modern')).map((tweak) => {
+            const optionLabels = t.appearance.options[tweak.axis] as Record<string, string>
+            return (
+              <div key={tweak.axis} style={{ marginTop: 12 }}>
+                <p className="hint" style={{ margin: '0 0 6px', textTransform: 'uppercase' }}>
+                  {t.appearance[tweak.axis]}
+                </p>
+                <div className="row">
+                  {tweak.options.map((id) => (
+                    <button
+                      key={id}
+                      className={tweaks[tweak.axis] === id ? 'primary' : ''}
+                      onClick={() => setTweak(tweak.axis, id)}
+                    >
+                      {optionLabels[id]}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
           <p className="hint" style={{ marginTop: 12 }}>
-            Switch between the retro pixel look and a clean modern UI, toggle a light theme, and tune
-            the palette, font, spacing, and ornamentation. Saved across games.
+            {t.settings.appearanceHint}
           </p>
         </div>
 
@@ -155,10 +124,10 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
               onClose()
             }}
           >
-            Restart game
+            {t.settings.restart}
           </button>
           <button className="primary" onClick={onClose}>
-            Close
+            {t.settings.closeButton}
           </button>
         </div>
       </aside>

@@ -109,6 +109,31 @@ export interface LevelConfig {
   monsterKind: MonsterKind
 }
 
+/**
+ * A single action-log line, stored structurally (a discriminated event + its
+ * data) rather than as a pre-formatted string. This keeps the engine pure and
+ * language-agnostic: the UI translates each entry at render time, so the whole
+ * log re-renders in the active language when it is switched. Wording lives in
+ * `src/i18n/strings.ts`; the formatter is `formatLog` there.
+ */
+export type LogEntry =
+  | { t: 'levelStart'; level: number; count: number; kind: MonsterKind }
+  | { t: 'rolled'; dice: number[] }
+  | { t: 'turnTotals'; speed: number; attack: number; defense: number; range: number }
+  | { t: 'moved'; x: number; y: number; cost: number }
+  | { t: 'hit'; kind: MonsterKind; id: number; cost: number }
+  | { t: 'killed'; kind: MonsterKind; id: number; cost: number }
+  | { t: 'levelCleared' }
+  | { t: 'won' }
+  | { t: 'monsterAttack'; total: number; defense: number; damage: number }
+  | { t: 'died' }
+  | { t: 'wizardReroll'; dice: number[] }
+  | { t: 'barbarianReroll'; dice: number[] }
+  | { t: 'rangerUnlock' }
+  | { t: 'paladinKeep'; value: number }
+  | { t: 'healed'; health: number }
+  | { t: 'upgraded'; skill: Skill; value: number }
+
 export interface GameState {
   phase: Phase
   levelIndex: number // 0..11
@@ -120,7 +145,7 @@ export interface GameState {
   classState: ClassState
   settings: Settings
   turnCount: number // turns elapsed in the current level
-  log: string[]
+  log: LogEntry[]
   rngState: number // serializable PRNG cursor
   /** Paladin: a die value carried into next turn's roll (consumed on roll). */
   paladinPending: DieFace | null

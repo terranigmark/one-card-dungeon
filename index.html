@@ -23,6 +23,26 @@
       } catch (e) {
         /* storage blocked — keep the defaults set on <html> */
       }
+      // Resolve <html lang> before first paint: a saved choice, else the device
+      // language (es/en supported). Key/logic mirror src/i18n/store.ts.
+      try {
+        var saved = localStorage.getItem('ocd:lang')
+        if (saved === 'en' || saved === 'es') {
+          document.documentElement.lang = saved
+        } else {
+          var prefs = navigator.languages || [navigator.language]
+          for (var i = 0; i < prefs.length; i++) {
+            var p = (prefs[i] || '').toLowerCase()
+            if (p.indexOf('es') === 0) {
+              document.documentElement.lang = 'es'
+              break
+            }
+            if (p.indexOf('en') === 0) break
+          }
+        }
+      } catch (e) {
+        /* storage blocked — keep lang="en" set on <html> */
+      }
     </script>
   </head>
   <body>
