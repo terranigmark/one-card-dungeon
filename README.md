@@ -1,5 +1,7 @@
 # One-Card Dungeon (web)
 
+[![CI](https://github.com/terranigmark/one-card-dungeon/actions/workflows/ci.yml/badge.svg)](https://github.com/terranigmark/one-card-dungeon/actions/workflows/ci.yml)
+
 A single-player, browser version of the solo board game **One-Card Dungeon**
 (Little Rocket Games, 2021). Descend through 12 increasingly deadly levels to claim the
 Sceptre of MGuf-yn. You control the hero (a green die); the monsters (red dice) are
