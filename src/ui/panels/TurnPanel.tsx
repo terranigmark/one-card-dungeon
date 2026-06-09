@@ -141,7 +141,23 @@ export function TurnPanel() {
           const idx = energy.assignment[slot]
           const filled = idx !== undefined
           return (
-            <div key={slot} className={`slot assignable ${filled ? 'filled' : ''}`} onClick={() => onSlotClick(slot)}>
+            <div
+              key={slot}
+              className={`slot assignable ${filled ? 'filled' : ''}`}
+              // Kept a <div> (not <button>) to avoid inheriting the global pixel
+              // button styling, but made operable by keyboard/switch users:
+              // focusable + Enter/Space activate, matching .slot:focus-visible.
+              role="button"
+              tabIndex={0}
+              aria-label={`${t.stats[slot]}: ${totals[slot]}`}
+              onClick={() => onSlotClick(slot)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onSlotClick(slot)
+                }
+              }}
+            >
               <span>
                 {t.stats[slot]} <strong>{totals[slot]}</strong>
               </span>

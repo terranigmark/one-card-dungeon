@@ -3,7 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover lets the layout extend under notches/home indicators;
+         the safe-area-inset-* env() values are then consumed in src/index.css. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Tints the mobile browser chrome to match the dungeon background. Tracks the
+         OS colour scheme; the in-app Light/Dark toggle is data-mode driven and may
+         momentarily differ from the OS preference, which is acceptable for chrome. -->
+    <meta name="theme-color" content="#06061a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ddd3bb" media="(prefers-color-scheme: light)" />
     <title>one-card-dungeon</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
