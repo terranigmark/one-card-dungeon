@@ -5,6 +5,7 @@ import type {
   EnergyDice,
   GameState,
   Hero,
+  LogEntry,
   Monster,
   Settings,
 } from './types'
@@ -77,7 +78,7 @@ function loadLevel(state: GameState, idx: number): GameState {
     classState: freshClassState(),
     paladinPending: null,
     phase: 'Energy',
-    log: [...state.log, `— Level ${cfg.level}: ${monsters.length} ${cfg.monsterKind}(s) —`],
+    log: [...state.log, { t: 'levelStart', level: cfg.level, count: monsters.length, kind: cfg.monsterKind }],
   }
 }
 
@@ -100,8 +101,8 @@ function diceAllAssigned(e: EnergyDice): boolean {
   return true
 }
 
-function withLog(state: GameState, msg: string): GameState {
-  return { ...state, log: [...state.log, msg] }
+function withLog(state: GameState, entry: LogEntry): GameState {
+  return { ...state, log: [...state.log, entry] }
 }
 
 export function gameReducer(state: GameState, action: Action): GameState {
@@ -128,7 +129,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
           paladinPending: null,
           energy: { rolled, assignment: {}, rangerUnlocked: state.energy.rangerUnlocked },
         },
-        `Rolled ${rolled.join(', ')}`,
+        { t: 'rolled', dice: rolled },
       )
     }
 
@@ -162,7 +163,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
           turn: { totals, speedLeft: totals.speed, attackLeft: totals.attack },
           phase: 'Adventurer',
         },
-        `Turn totals — SPD ${totals.speed}  ATK ${totals.attack}  DEF ${totals.defense}  RNG ${totals.range}`,
+        { t: 'turnTotals', speed: totals.speed, attack: totals.attack, defense: totals.defense, range: totals.range },
       )
     }
 
@@ -178,7 +179,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
           hero: { ...state.hero, pos: { ...to } },
           turn: { ...state.turn, speedLeft: state.turn.speedLeft - cost },
         },
-        `Moved to (${to.x},${to.y})  [-${cost} Speed]`,
+        { t: 'moved', x: to.x, y: to.y, cost },
       )
     }
 
@@ -195,20 +196,20 @@ export function gameReducer(state: GameState, action: Action): GameState {
       const turn = { ...state.turn, attackLeft: state.turn.attackLeft - cost }
       const newHealth = m.health - 1
       let monsters: Monster[]
-      let msg: string
+      let entry: LogEntry
       if (newHealth <= 0) {
         monsters = state.monsters.filter((x) => x.id !== m.id)
-        msg = `Killed ${m.kind} #${m.id}  [-${cost} Attack]`
+        entry = { t: 'killed', kind: m.kind, id: m.id, cost }
       } else {
         monsters = state.monsters.map((x) => (x.id === m.id ? { ...x, health: newHealth } : x))
-        msg = `Hit ${m.kind} #${m.id} (-1 HP)  [-${cost} Attack]`
+        entry = { t: 'hit', kind: m.kind, id: m.id, cost }
       }
-      const base = withLog({ ...state, monsters, turn }, msg)
+      const base = withLog({ ...state, monsters, turn }, entry)
       if (monsters.length === 0) {
         if (state.levelIndex === TOTAL_LEVELS - 1) {
-          return withLog({ ...base, phase: 'Won' }, 'The dungeon is cleared. You win!')
+          return withLog({ ...base, phase: 'Won' }, { t: 'won' })
         }
-        return withLog({ ...base, phase: 'EndOfLevel' }, 'Level cleared!')
+        return withLog({ ...base, phase: 'EndOfLevel' }, { t: 'levelCleared' })
       }
       return base
     }
@@ -234,29 +235,30 @@ export function gameReducer(state: GameState, action: Action): GameState {
       const total = attackers.reduce((s, m) => s + m.attack, 0)
       const dmg = damageToHero(total, state.turn.totals.defense)
       const newHealth = state.hero.health - dmg
-      const msg = `Monsters: ${total} Attack vs ${state.turn.totals.defense} Defense → ${dmg} damage`
+      const entry: LogEntry = { t: 'monsterAttack', total, defense: state.turn.totals.defense, damage: dmg }
       if (newHealth <= 0) {
-        return withLog({ ...state, hero: { ...state.hero, health: 0 }, phase: 'Lost' }, `${msg}. You have died.`)
+        const hit = withLog({ ...state, hero: { ...state.hero, health: 0 }, phase: 'Lost' }, entry)
+        return withLog(hit, { t: 'died' })
       }
-      return startNextTurn(withLog({ ...state, hero: { ...state.hero, health: newHealth } }, msg))
+      return startNextTurn(withLog({ ...state, hero: { ...state.hero, health: newHealth } }, entry))
     }
 
     case 'CHOOSE_REWARD': {
       if (state.phase !== 'EndOfLevel') return state
       const reward = action.reward
       let hero: Hero
-      let msg: string
+      let entry: LogEntry
       if (reward.kind === 'heal') {
         hero = { ...state.hero, health: state.hero.maxHealth }
-        msg = `Rested and healed to ${state.hero.maxHealth} Health`
+        entry = { t: 'healed', health: state.hero.maxHealth }
       } else {
         hero = {
           ...state.hero,
           base: { ...state.hero.base, [reward.skill]: state.hero.base[reward.skill] + 1 },
         }
-        msg = `Upgraded ${reward.skill} to ${hero.base[reward.skill]}`
+        entry = { t: 'upgraded', skill: reward.skill, value: hero.base[reward.skill] }
       }
-      return loadLevel(withLog({ ...state, hero }, msg), state.levelIndex + 1)
+      return loadLevel(withLog({ ...state, hero }, entry), state.levelIndex + 1)
     }
 
     case 'ABILITY_WIZARD_REROLL': {
@@ -270,7 +272,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
           energy: { rolled: r.value, assignment: {}, rangerUnlocked: state.energy.rangerUnlocked },
           classState: { ...state.classState, usedThisLevel: true },
         },
-        `Wizard rerolls: ${r.value.join(', ')}`,
+        { t: 'wizardReroll', dice: r.value },
       )
     }
 
@@ -287,7 +289,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
           energy: { rolled: r.value, assignment: {}, rangerUnlocked: state.energy.rangerUnlocked },
           classState: { ...state.classState, usedThisTurn: true },
         },
-        `Barbarian's fury rerolls: ${r.value.join(', ')}`,
+        { t: 'barbarianReroll', dice: r.value },
       )
     }
 
@@ -300,7 +302,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
           energy: { ...state.energy, rangerUnlocked: true },
           classState: { ...state.classState, usedThisLevel: true },
         },
-        'Ranger may assign a die to Range this turn',
+        { t: 'rangerUnlock' },
       )
     }
 
@@ -315,7 +317,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
           paladinPending: state.energy.rolled[idx],
           classState: { ...state.classState, usedThisLevel: true },
         },
-        `Paladin keeps a ${state.energy.rolled[idx]} for next turn`,
+        { t: 'paladinKeep', value: state.energy.rolled[idx] },
       )
     }
 
