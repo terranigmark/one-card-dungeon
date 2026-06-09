@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useDispatch, useGameState } from '../../state/hooks'
 import { LEVELS } from '../../engine/levels'
 import { Board } from '../board/Board'
@@ -7,12 +7,10 @@ import { EnemyStatPanel } from '../panels/EnemyStatPanel'
 import { TurnPanel } from '../panels/TurnPanel'
 import { ActionLog } from '../panels/ActionLog'
 import { EndOfLevel } from '../modals/EndOfLevel'
-import { SettingsModal } from '../modals/SettingsModal'
 
-export function GameScreen() {
+export function GameScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
   const state = useGameState()
   const dispatch = useDispatch()
-  const [showSettings, setShowSettings] = useState(false)
   const cfg = LEVELS[state.levelIndex]
 
   // Monster phases resolve automatically, with a short beat for readability.
@@ -36,7 +34,7 @@ export function GameScreen() {
         </span>
         <span className="spacer" />
         <span className="tag">{state.settings.difficulty} AI</span>
-        <button onClick={() => setShowSettings(true)}>⚙ Settings</button>
+        <button onClick={onOpenSettings}>⚙ Settings</button>
       </div>
 
       <div className="game-layout">
@@ -50,7 +48,6 @@ export function GameScreen() {
       </div>
 
       {state.phase === 'EndOfLevel' && <EndOfLevel />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   )
 }
