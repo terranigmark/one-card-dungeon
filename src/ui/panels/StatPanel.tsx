@@ -1,26 +1,28 @@
 import { useGameState } from '../../state/hooks'
-import { CLASSES } from '../../engine/classes'
+import { useT } from '../../i18n'
 
 export function StatPanel() {
   const { hero, turn, phase } = useGameState()
-  const className = hero.classId && hero.classId !== 'none' ? CLASSES[hero.classId].name : 'Adventurer'
+  const t = useT()
+  const className =
+    hero.classId && hero.classId !== 'none' ? t.classes[hero.classId].name : t.adventurer
 
   return (
     <div className="panel">
       <h3>{className}</h3>
       <div className="stats">
         <div className="stat health">
-          <span className="label">Health</span>
+          <span className="label">{t.stats.health}</span>
           <span className="value">
             {hero.health}/{hero.maxHealth}
           </span>
         </div>
         <div className="stat">
-          <span className="label">Range</span>
+          <span className="label">{t.stats.range}</span>
           <span className="value">{turn ? turn.totals.range : hero.base.range}</span>
         </div>
         <div className="stat">
-          <span className="label">Speed</span>
+          <span className="label">{t.stats.speed}</span>
           <span className="value">
             {turn ? (
               <>
@@ -32,7 +34,7 @@ export function StatPanel() {
           </span>
         </div>
         <div className="stat">
-          <span className="label">Attack</span>
+          <span className="label">{t.stats.attack}</span>
           <span className="value">
             {turn ? (
               <>
@@ -44,16 +46,11 @@ export function StatPanel() {
           </span>
         </div>
         <div className="stat">
-          <span className="label">Defense</span>
+          <span className="label">{t.stats.defense}</span>
           <span className="value">{turn ? turn.totals.defense : hero.base.defense}</span>
         </div>
       </div>
-      {phase === 'Adventurer' && (
-        <p className="hint">
-          Move costs 2 (orthogonal) / 3 (diagonal) Speed. Each attack spends the target's Defense
-          in Attack points to remove 1 Health.
-        </p>
-      )}
+      {phase === 'Adventurer' && <p className="hint">{t.statPanel.hint}</p>}
     </div>
   )
 }

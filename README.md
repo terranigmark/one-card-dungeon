@@ -42,6 +42,15 @@ Paladin (keep a die for next turn), Barbarian (reroll all dice at 1 HP), Ranger 
 Range), Wizard (reroll all energy dice). Pick one on the start screen; use the ability button in
 the Energy phase.
 
+### Language (Settings ⚙)
+The whole interface is available in **English** and **Spanish**. The picker sits at the top of the
+settings drawer; the choice is saved to `localStorage` (`ocd:lang`) across games. With no saved
+choice, it defaults to the **device language** (any Spanish locale → Spanish, otherwise English),
+resolved before first paint by the boot script in [`index.html`](index.html). All copy — including
+the live action log, which is stored structurally and re-rendered on switch — lives in
+[`src/i18n/strings.ts`](src/i18n/strings.ts); the source of truth is
+[`src/i18n/store.ts`](src/i18n/store.ts).
+
 ### Difficulty (Settings ⚙)
 - **Faithful** – the rulebook's monster behaviour (independent kiting).
 - **Aggressive** – monsters are planned *jointly* to maximise the damage they deal each turn,
@@ -105,6 +114,7 @@ src/engine/         pure game logic (no React) — fully unit-tested
   classes.ts        the 4 class definitions
   ai/               faithful + aggressive monster strategies
 src/state/          Zustand store wrapping the pure reducer
+src/i18n/           English/Spanish copy + language store (device-default, persisted)
 src/ui/             React components (board, panels, modals, screens)
 ```
 

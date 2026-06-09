@@ -2,17 +2,15 @@ import { useState } from 'react'
 import { useDispatch, useGameState } from '../../state/hooks'
 import type { AssignSlot } from '../../engine/types'
 import { computeTotals } from '../../engine/rules'
+import { useT } from '../../i18n'
 import { Die } from '../board/Die'
 
-const BASE_SLOTS: Array<{ slot: AssignSlot; label: string }> = [
-  { slot: 'speed', label: 'Speed' },
-  { slot: 'attack', label: 'Attack' },
-  { slot: 'defense', label: 'Defense' },
-]
+const BASE_SLOTS: AssignSlot[] = ['speed', 'attack', 'defense']
 
 function ClassAbilityRow({ selected }: { selected: number | null }) {
   const { hero, classState, energy } = useGameState()
   const dispatch = useDispatch()
+  const t = useT()
   const c = hero.classId
   if (!c || c === 'none') return null
   const usedLevel = classState.usedThisLevel
@@ -22,7 +20,7 @@ function ClassAbilityRow({ selected }: { selected: number | null }) {
     <div className="row">
       {c === 'wizard' && (
         <button disabled={usedLevel || noDice} onClick={() => dispatch({ type: 'ABILITY_WIZARD_REROLL' })}>
-          ↻ Reroll all (Wizard)
+          {t.turn.wizardReroll}
         </button>
       )}
       {c === 'barbarian' && (
@@ -30,7 +28,7 @@ function ClassAbilityRow({ selected }: { selected: number | null }) {
           disabled={classState.usedThisTurn || hero.health !== 1 || noDice}
           onClick={() => dispatch({ type: 'ABILITY_BARBARIAN_REROLL' })}
         >
-          💢 Fury reroll (needs 1 HP)
+          {t.turn.furyReroll}
         </button>
       )}
       {c === 'ranger' && (
@@ -38,7 +36,7 @@ function ClassAbilityRow({ selected }: { selected: number | null }) {
           disabled={usedLevel || energy.rangerUnlocked}
           onClick={() => dispatch({ type: 'ABILITY_RANGER_RANGE' })}
         >
-          🎯 Unlock Range slot
+          {t.turn.unlockRange}
         </button>
       )}
       {c === 'paladin' && (
@@ -46,7 +44,7 @@ function ClassAbilityRow({ selected }: { selected: number | null }) {
           disabled={usedLevel || selected === null}
           onClick={() => selected !== null && dispatch({ type: 'ABILITY_PALADIN_KEEP', dieIndex: selected })}
         >
-          ✋ Keep selected die next turn
+          {t.turn.keepDie}
         </button>
       )}
     </div>
@@ -56,35 +54,33 @@ function ClassAbilityRow({ selected }: { selected: number | null }) {
 export function TurnPanel() {
   const state = useGameState()
   const dispatch = useDispatch()
+  const t = useT()
   const [selected, setSelected] = useState<number | null>(null)
   const { phase, energy, hero } = state
 
   if (phase === 'MonsterMove') {
     return (
       <div className="panel">
-        <h3>Monster phase</h3>
-        <p className="hint">The monsters reposition to keep you at range…</p>
+        <h3>{t.turn.monsterPhase}</h3>
+        <p className="hint">{t.turn.monstersReposition}</p>
       </div>
     )
   }
   if (phase === 'MonsterAttack') {
     return (
       <div className="panel">
-        <h3>Monster phase</h3>
-        <p className="hint">The monsters strike…</p>
+        <h3>{t.turn.monsterPhase}</h3>
+        <p className="hint">{t.turn.monstersStrike}</p>
       </div>
     )
   }
   if (phase === 'Adventurer') {
     return (
       <div className="panel">
-        <h3>Your move</h3>
-        <p className="hint">
-          Click a green tile to move, or a red monster to attack. Act in any order until your points
-          run out.
-        </p>
+        <h3>{t.turn.yourMove}</h3>
+        <p className="hint">{t.turn.yourMoveHint}</p>
         <button className="primary" onClick={() => dispatch({ type: 'END_ADVENTURER' })}>
-          End turn ⟶ Monsters
+          {t.turn.endTurn}
         </button>
       </div>
     )
@@ -94,21 +90,16 @@ export function TurnPanel() {
   if (energy.rolled.length === 0) {
     return (
       <div className="panel">
-        <h3>Energy phase</h3>
-        <p className="hint">
-          Roll three dice and assign one each to Speed, Attack and Defense. Range never takes a die
-          (unless you are a Ranger).
-        </p>
+        <h3>{t.turn.energyPhase}</h3>
+        <p className="hint">{t.turn.energyHint}</p>
         <button className="primary" onClick={() => dispatch({ type: 'ROLL_ENERGY' })}>
-          🎲 Roll the dice
+          {t.turn.rollDice}
         </button>
       </div>
     )
   }
 
-  const slots = energy.rangerUnlocked
-    ? [...BASE_SLOTS, { slot: 'range' as AssignSlot, label: 'Range' }]
-    : BASE_SLOTS
+  const slots: AssignSlot[] = energy.rangerUnlocked ? [...BASE_SLOTS, 'range'] : BASE_SLOTS
   const dieToSlot = new Map<number, AssignSlot>()
   for (const [slot, idx] of Object.entries(energy.assignment)) {
     if (idx !== undefined) dieToSlot.set(idx, slot as AssignSlot)
@@ -127,29 +118,32 @@ export function TurnPanel() {
 
   return (
     <div className="panel">
-      <h3>Assign your dice</h3>
+      <h3>{t.turn.assignDice}</h3>
       <div className="dice-tray">
-        {energy.rolled.map((v, i) => (
-          <span key={i} style={{ display: 'inline-flex', opacity: dieToSlot.has(i) ? 0.45 : 1 }}>
-            <Die
-              value={v}
-              color="black"
-              selected={selected === i}
-              onClick={() => setSelected(selected === i ? null : i)}
-              title={dieToSlot.get(i) ? `Assigned to ${dieToSlot.get(i)}` : 'Click to select'}
-            />
-          </span>
-        ))}
+        {energy.rolled.map((v, i) => {
+          const assignedSlot = dieToSlot.get(i)
+          return (
+            <span key={i} style={{ display: 'inline-flex', opacity: assignedSlot ? 0.45 : 1 }}>
+              <Die
+                value={v}
+                color="black"
+                selected={selected === i}
+                onClick={() => setSelected(selected === i ? null : i)}
+                title={assignedSlot ? t.turn.assignedTo(t.stats[assignedSlot]) : t.turn.clickToSelect}
+              />
+            </span>
+          )
+        })}
       </div>
-      <p className="hint">Select a die, then click a stat to assign it. Click a filled stat to clear it.</p>
+      <p className="hint">{t.turn.assignHint}</p>
       <div className="slots">
-        {slots.map(({ slot, label }) => {
+        {slots.map((slot) => {
           const idx = energy.assignment[slot]
           const filled = idx !== undefined
           return (
             <div key={slot} className={`slot assignable ${filled ? 'filled' : ''}`} onClick={() => onSlotClick(slot)}>
               <span>
-                {label} <strong>{totals[slot]}</strong>
+                {t.stats[slot]} <strong>{totals[slot]}</strong>
               </span>
               {filled ? (
                 <span className="slot-die">
@@ -164,7 +158,7 @@ export function TurnPanel() {
       </div>
       <ClassAbilityRow selected={selected} />
       <button className="primary" disabled={!allAssigned} onClick={() => dispatch({ type: 'CONFIRM_ENERGY' })}>
-        Confirm ⟶ Move
+        {t.turn.confirm}
       </button>
     </div>
   )
