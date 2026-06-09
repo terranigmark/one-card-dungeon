@@ -390,8 +390,15 @@ h3 {
   border-color: var(--gold);
 }
 .slot .slot-die {
+  display: inline-flex;
+  flex: none;
   width: 30px;
   height: 30px;
+}
+.slot .slot-die .die {
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
 }
 .slot .empty-die {
   width: 30px;
