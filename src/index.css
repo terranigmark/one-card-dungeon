@@ -230,10 +230,13 @@ button {
     inset -2px -3px 0 rgba(0, 0, 0, 0.45);
   transition: background 0.1s, border-color 0.1s;
 }
-button:hover:not(:disabled) {
-  background: var(--frame-dim);
-  border-color: var(--gold-dim);
-  color: #fff;
+/* Hover cues are gated so they never latch after a tap on touch screens. */
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) {
+    background: var(--frame-dim);
+    border-color: var(--gold-dim);
+    color: #fff;
+  }
 }
 button:active:not(:disabled) {
   transform: translateY(2px);
@@ -252,10 +255,12 @@ button.primary {
     inset 2px 2px 0 rgba(255, 255, 255, 0.3),
     inset -2px -3px 0 rgba(0, 0, 0, 0.25);
 }
-button.primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-  background: linear-gradient(180deg, var(--gold-bright) 0 48%, var(--gold-dim) 48%);
-  color: #2a1d08;
+@media (hover: hover) and (pointer: fine) {
+  button.primary:hover:not(:disabled) {
+    filter: brightness(1.08);
+    background: linear-gradient(180deg, var(--gold-bright) 0 48%, var(--gold-dim) 48%);
+    color: #2a1d08;
+  }
 }
 
 h1, h2, h3 {
@@ -305,9 +310,16 @@ h1, h2, h3 {
 
 .game-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(300px, 340px);
+  /* board column min is 0 (not 320px) so it can shrink on narrow widths without
+     forcing horizontal scroll; at desktop widths 1fr still hands it the surplus. */
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
   gap: calc(16px * var(--sp));
   align-items: start;
+}
+.side-col {
+  display: flex;
+  flex-direction: column;
+  gap: calc(16px * var(--sp));
 }
 @media (max-width: 860px) {
   .game-layout {
@@ -370,8 +382,10 @@ h1, h2, h3 {
 }
 .board-grid .tile:nth-child(3n) { background: var(--tile-2); }
 .board-grid .tile:nth-child(7n+2) { background: var(--tile-3); }
-.tile:hover:not(:disabled) {
-  filter: brightness(1.06);
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
 }
 .tile.wall {
   background: var(--stone);
@@ -608,8 +622,10 @@ h1, h2, h3 {
   border-color: var(--gold-dim);
   color: var(--text);
 }
-.slot.assignable:hover {
-  border-color: var(--gold);
+@media (hover: hover) and (pointer: fine) {
+  .slot.assignable:hover {
+    border-color: var(--gold);
+  }
 }
 .slot .slot-die {
   display: inline-flex;
@@ -732,10 +748,12 @@ h1, h2, h3 {
   gap: calc(18px * var(--sp));
   flex-wrap: wrap;
 }
-.class-card:hover:not(:disabled) {
-  background: var(--bg-2);
-  border-color: var(--frame);
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .class-card:hover:not(:disabled) {
+    background: var(--bg-2);
+    border-color: var(--frame);
+    color: var(--text);
+  }
 }
 .class-card.selected {
   border-color: var(--gold);
@@ -1278,4 +1296,367 @@ html[data-mode='light'] .class-card .cname {
 }
 html[data-mode='light'] .center-screen h1 {
   text-shadow: 2px 2px 0 var(--edge);
+}
+
+/* ==========================================================================
+   MOBILE & TOUCH
+   Appended last on purpose: every @media rule and CSS-variable redeclaration
+   below must out-rank the base :root and the data-type / data-skin / data-mode
+   blocks above. Those carry equal (or higher, for [data-skin]) specificity, so
+   the cascade is decided by source order — hence this section lives at the end.
+
+   Breakpoints:
+     860px  → layout collapse + touch ergonomics (matches the .game-layout
+              single-column collapse defined earlier)
+     600px  → phone typography + drawer / modal sheet behaviour
+     short landscape (max-height: 540px) → restore a 2-column board+panels view
+   Desktop (≥ 861px) is intentionally left untouched.
+   ========================================================================== */
+
+/* ---- keyboard focus ring (all devices; never hidden behind a media query) --
+   The app shipped with no focus indicator at all; gating hover above made that
+   gap visible for keyboard / switch users, so add an explicit ring (WCAG 2.4.7). */
+button:not(.tile):focus-visible,
+.slot:focus-visible {
+  /* clip-path:none is required here: buttons carry clip-path: var(--px-corners),
+     which would clip an offset outline away entirely so the ring never paints.
+     Dropping the clip on focus lets the ring sit on the dark page behind the
+     control, so it reads on dark surfaces AND on the gold primary button. */
+  clip-path: none;
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+/* the board clips overflow, so the tile ring sits inside the cell */
+.tile:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -3px;
+}
+
+/* ---- touch behaviour (all devices) ----
+   Kill the grey tap flash, suppress double-tap-zoom and accidental text
+   selection on controls (prose like .hint / .lede / .log is deliberately
+   excluded so it stays selectable). */
+button,
+.tile,
+.die,
+.slot,
+.settings-fab,
+.drawer-close {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* no pull-to-refresh reloading the game mid-turn */
+  overscroll-behavior-y: contain;
+}
+
+/* Use the dynamic viewport height so mobile browser chrome can't clip the shell
+   (kept behind @supports with the 100vh rule above as the fallback). */
+@supports (min-height: 100dvh) {
+  body {
+    min-height: 100dvh;
+  }
+  #root {
+    min-height: 100dvh;
+  }
+}
+
+/* scrolling regions don't chain to the page; smooth iOS momentum */
+.log,
+.drawer,
+.modal {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* On touch (no hover) give empty assignable slots a persistent gold-dim border
+   as a "tap me" affordance, replacing the hover cue removed above. Filled slots
+   keep their solid gold border so the empty/filled read survives. */
+@media (hover: none) {
+  .slot.assignable:not(.filled) {
+    border-color: var(--gold-dim);
+  }
+}
+
+/* ---- safe-area insets on fixed elements (all viewports; env() is 0 on
+        desktop, so max() collapses to the original 14px / 20px values) ---- */
+.settings-fab {
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+}
+.drawer {
+  padding-top: max(calc(20px * var(--sp)), env(safe-area-inset-top));
+  padding-right: max(calc(20px * var(--sp)), calc(env(safe-area-inset-right) + 4px));
+  padding-bottom: max(calc(20px * var(--sp)), calc(env(safe-area-inset-bottom) + 8px));
+}
+
+/* Safe-area insets on the page content itself, on ALL viewports. Notched phones
+   in LANDSCAPE are wider than the 860px query (Pro-Max-class ≈ 932px), so the
+   per-breakpoint .app insets below would miss them and the notch/curve would
+   clip the topbar and the board's left edge. env() is 0 on desktop, so max()
+   collapses to the base 16px — no desktop change. The ≤860px block overrides
+   this with its tighter 12px insets by source order. */
+.app {
+  padding-top: max(calc(16px * var(--sp)), env(safe-area-inset-top));
+  padding-right: max(calc(16px * var(--sp)), env(safe-area-inset-right));
+  padding-bottom: max(calc(16px * var(--sp)), env(safe-area-inset-bottom));
+  padding-left: max(calc(16px * var(--sp)), env(safe-area-inset-left));
+}
+
+/* The reward modal scrolls internally so a long list never hides the Heal
+   button below the fold; vh first, dvh as the progressive upgrade. */
+.modal {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+@supports (max-height: 100dvh) {
+  .modal {
+    /* subtract the same safe-area insets the backdrop pads with, so the modal
+       can never be taller than the gap between them on a notched viewport */
+    max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+}
+.modal-backdrop {
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  /* center a modal that fits, but top-align one that overflows so its top (and
+     close affordance) stays reachable instead of being clipped above the scroll
+     origin — the classic flex-centering-in-a-scroll-container trap. */
+  align-items: safe center;
+}
+
+/* ===================== ≤ 860px — phone / small tablet layout ===================== */
+@media (max-width: 860px) {
+  .app {
+    gap: calc(10px * var(--sp));
+    /* pad past notches / home indicator, but never less than the base 12px */
+    padding-top: max(calc(12px * var(--sp)), env(safe-area-inset-top));
+    padding-right: max(calc(12px * var(--sp)), env(safe-area-inset-right));
+    padding-bottom: max(calc(12px * var(--sp)), calc(env(safe-area-inset-bottom) + 8px));
+    padding-left: max(calc(12px * var(--sp)), env(safe-area-inset-left));
+  }
+
+  /* Cap the square board so the board + the first turn controls share the first
+     screen instead of the board eating the whole viewport. Width is the definite
+     dimension (the smaller of the column width or a height budget); the base
+     rule's aspect-ratio: 1/1 then derives the height. Driving width keeps the
+     square from collapsing — the board's children are all position:absolute, so
+     width:auto would have no intrinsic size to resolve against. */
+  .board-wrap {
+    width: min(100%, 52vh);
+    width: min(100%, 52dvh);
+    margin-inline: auto;
+  }
+
+  /* Promote the turn controls directly under the board. .side-col children keep
+     their JSX order: 1 = StatPanel, 2 = EnemyStatPanel, 3 = TurnPanel, 4 = Log. */
+  .side-col {
+    gap: calc(12px * var(--sp));
+  }
+  .side-col > :nth-child(3) {
+    order: 0;
+  } /* TurnPanel — the primary action surface, first */
+  .side-col > :nth-child(1) {
+    order: 1;
+  } /* hero stats */
+  .side-col > :nth-child(2) {
+    order: 2;
+  } /* enemy stats */
+  .side-col > :nth-child(4) {
+    order: 3;
+  } /* action log, last */
+  .side-col > :nth-child(3) .primary {
+    width: 100%;
+  }
+
+  .log {
+    height: 96px;
+  }
+
+  /* ---- touch targets (never floor the board .tile <button>s — a min-height on
+          them overflows the height-capped board and clips the bottom rows) ---- */
+  button:not(.tile) {
+    min-height: 44px;
+  }
+  button.primary {
+    padding: calc(12px * var(--sp)) calc(16px * var(--sp));
+  }
+  .settings-fab,
+  .drawer-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  /* dice tray + assignment slots: bigger dice, comfortable single-column slots */
+  .dice-tray {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .dice-tray .die {
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+  }
+  .slots {
+    grid-template-columns: 1fr;
+    gap: calc(8px * var(--sp));
+  }
+  .slot {
+    min-height: 48px;
+    padding: 10px calc(12px * var(--sp));
+  }
+
+  /* thicker move/attack rings + a press flash, since there is no hover on touch */
+  .tile.hl-move {
+    box-shadow: inset 0 0 0 100cqmin var(--hl-move), inset 0 0 0 5px var(--hl-move-border);
+  }
+  .tile.hl-attack {
+    box-shadow: inset 0 0 0 100cqmin var(--hl-attack), inset 0 0 0 5px var(--hl-attack-border);
+  }
+  html[data-decor='minimal'] .tile.hl-move {
+    box-shadow: inset 0 0 0 100cqmin var(--hl-move), inset 0 0 0 4px var(--hl-move-border);
+  }
+  html[data-decor='minimal'] .tile.hl-attack {
+    box-shadow: inset 0 0 0 100cqmin var(--hl-attack), inset 0 0 0 4px var(--hl-attack-border);
+  }
+  .tile.hl-move:active:not(:disabled),
+  .tile.hl-attack:active:not(:disabled) {
+    filter: brightness(1.15);
+  }
+}
+
+/* ===================== ≤ 600px — phone typography + chrome ===================== */
+@media (max-width: 600px) {
+  /* compact, wrapping header so the title / pill / tag / gear never overflow */
+  .topbar {
+    flex-wrap: wrap;
+    gap: calc(8px * var(--sp));
+    padding: calc(8px * var(--sp)) calc(10px * var(--sp));
+  }
+  .topbar .title {
+    /* shrink the title only (not --fs-h2, which the modal h2 also uses) */
+    font-size: clamp(12px, 4.2vw, 17px);
+    flex: 1 1 100%;
+    min-width: 0;
+    line-height: 1.3;
+  }
+  html[data-type='terminal'] .topbar .title {
+    font-size: clamp(16px, 6vw, 28px);
+  }
+  html[data-skin='modern'] .topbar .title {
+    font-size: clamp(15px, 5vw, 22px);
+  }
+  .topbar .spacer {
+    display: none;
+  }
+  .topbar .level-pill {
+    font-size: calc(var(--fs-pill) * 0.92);
+  }
+
+  /* Legible display heading + button text on small screens, tuned per pixel font
+     and per skin. Only .center-screen h1 consumes --fs-h1, so overriding it here
+     is safe; the explicit [data-type] / [data-skin] re-declarations are required
+     because those selectors out-specify a bare :root. */
+  :root {
+    --fs-h1: clamp(20px, 7.5vw, 28px);
+    --fs-btn: 13px;
+    --fs-label: 11px;
+  }
+  html[data-type='bitmap'] {
+    --fs-h1: clamp(22px, 8vw, 34px);
+    --fs-btn: 14px;
+    --fs-label: 12px;
+  }
+  html[data-type='terminal'] {
+    --fs-h1: clamp(30px, 11vw, 46px);
+    --fs-btn: 19px;
+    --fs-label: 15px;
+  }
+  html[data-skin='modern'] {
+    --fs-h1: clamp(26px, 9vw, 40px);
+    --fs-btn: 15px;
+    --fs-label: 12px;
+    --fs-body: 16px;
+    --fs-hint: 14px;
+  }
+  .center-screen h1 {
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  button {
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  /* readable numerals + measured prose */
+  .monster-bar .mstat .k {
+    font-size: 10px;
+  }
+  .tile .die {
+    font-size: clamp(16px, 5vw, 30px);
+  }
+  .slot .slot-die .die {
+    font-size: 16px;
+  }
+  .lede,
+  .hint,
+  .banner {
+    line-height: 1.5;
+  }
+  .lede {
+    max-width: 38ch;
+    margin-inline: auto;
+  }
+  .banner {
+    max-width: 44ch;
+    margin-inline: auto;
+  }
+
+  /* drawer as a near-full sheet; option buttons share the row evenly; 1-up rewards */
+  .drawer {
+    width: min(420px, 100vw);
+  }
+  .drawer .row button {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .choice-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===================== short landscape phones =====================
+   pointer: coarse keeps this to real touch devices, so a short/landscape DESKTOP
+   window (fine pointer) stays on the desktop layout. It is deliberately NOT
+   width-gated, so it also covers Pro-Max-class phones wider than 860px which
+   genuinely need the height-capped board in landscape. */
+@media (orientation: landscape) and (max-height: 540px) and (pointer: coarse) {
+  /* restore a 2-column board-beside-panels view and cap the board by height
+     (vh fallback → dvh) so it fits between the topbar and the bottom edge */
+  .game-layout {
+    grid-template-columns: minmax(0, auto) minmax(260px, 1fr);
+    align-items: start;
+  }
+  .board-wrap {
+    /* Height-led square in landscape: the height is the definite dimension (a
+       budget below the viewport) and aspect-ratio: 1/1 derives the width, which
+       the minmax(0, auto) board column then sizes to. */
+    height: calc(100vh - 110px);
+    height: calc(100dvh - 110px);
+    width: auto;
+    aspect-ratio: 1 / 1;
+    margin-inline: auto;
+  }
+  /* wide landscape phones (>860px) miss the ≤860px touch-target floor above */
+  button:not(.tile) {
+    min-height: 44px;
+  }
 }

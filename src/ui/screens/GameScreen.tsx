@@ -41,7 +41,9 @@ export function GameScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
 
       <div className="game-layout">
         <Board />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Child order is load-bearing: the mobile reorder in index.css targets
+            these by :nth-child (1=Stat, 2=Enemy, 3=Turn, 4=Log). */}
+        <div className="side-col">
           <StatPanel />
           <EnemyStatPanel />
           <TurnPanel />
