@@ -1,15 +1,19 @@
 import { useDispatch, useGameState } from '../../state/hooks'
 import { CLASS_LIST } from '../../engine/classes'
+import { SwordDivider } from '../SwordDivider'
+import { SettingsButton } from '../SettingsButton'
 
-export function ClassSelect() {
+export function ClassSelect({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { hero } = useGameState()
   const dispatch = useDispatch()
   const selected = hero.classId
 
   return (
     <div className="app">
+      <SettingsButton onClick={onOpenSettings} />
       <div className="center-screen">
         <h1>One-Card Dungeon</h1>
+        <SwordDivider />
         <p className="lede">
           Descend through 12 increasingly deadly levels to claim the Sceptre of MGuf-yn. Each turn,
           roll three dice and assign them to your Speed, Attack and Defense, then move and strike.

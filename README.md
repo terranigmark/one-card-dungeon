@@ -47,6 +47,28 @@ the Energy phase.
 - **Aggressive** – monsters are planned *jointly* to maximise the damage they deal each turn,
   coordinating line of sight and exploiting your Defense divisor to cross damage thresholds.
 
+### Appearance (Settings ⚙)
+Settings open from a **top-right gear on every screen** (the title screen, in-game topbar, and end
+screens) and render as a **right-anchored side drawer** rather than a centered modal — the board /
+title stays visible behind it (the scrim is transparent), so the live appearance tweaks preview in
+place. Close it with the ✕, the Close button, Esc, or a click outside.
+
+The theme is fully customizable from the **Appearance** section. Each axis is applied
+as a `data-*` attribute on `<html>` (read by attribute selectors in
+[`src/index.css`](src/index.css)) and persisted to `localStorage` across games:
+- **Style** – `Retro` (the pixel-art look) or `Modern` (a clean system-font UI with rounded
+  corners and soft shadows).
+- **Theme** – `Dark` or `Light`; works under either style.
+- **Palette** – `Crypt` (darkest), `Classic` (the box), or `Torchlit` (warm, lit).
+- **Pixel font** – `Arcade` (Press Start 2P), `Bitmap` (Silkscreen / Pixelify Sans), or
+  `Terminal` (VT323). *Retro only — hidden when Style is Modern.*
+- **Density** – `Cozy` or `Compact` spacing.
+- **Decoration** – `Minimal`, `Standard`, or `Ornate` (pixel frames, dither, CRT scanlines).
+  *Retro only — hidden when Style is Modern.*
+
+The selected values are mirrored onto `<html>` before first paint by a small boot script in
+[`index.html`](index.html); the source of truth is [`src/state/themeStore.ts`](src/state/themeStore.ts).
+
 ## Using the real card art (optional)
 
 The board uses a themed placeholder by default. To use the physical card's art, drop two images at:

@@ -1,10 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-skin="retro" data-mode="dark" data-palette="classic" data-type="arcade" data-density="cozy" data-decor="standard">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>one-card-dungeon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&family=Pixelify+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Apply persisted appearance tweaks before first paint to avoid a flash of
+         default styling. Key must match STORAGE_KEY in src/state/themeStore.ts. -->
+    <script>
+      try {
+        var t = JSON.parse(localStorage.getItem('ocd:tweaks') || '{}')
+        var d = document.documentElement
+        ;['skin', 'mode', 'palette', 'type', 'density', 'decor'].forEach(function (k) {
+          if (t[k]) d.dataset[k] = t[k]
+        })
+      } catch (e) {
+        /* storage blocked — keep the defaults set on <html> */
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
