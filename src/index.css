@@ -317,6 +317,9 @@ h3 {
   border-bottom: 1px solid var(--border);
   padding-bottom: 6px;
 }
+.panel h3 .enemy-emoji {
+  font-size: 17px;
+}
 .row {
   display: flex;
   gap: 8px;

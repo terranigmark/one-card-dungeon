@@ -3,6 +3,7 @@ import { useDispatch, useGameState } from '../../state/hooks'
 import { LEVELS } from '../../engine/levels'
 import { Board } from '../board/Board'
 import { StatPanel } from '../panels/StatPanel'
+import { EnemyStatPanel } from '../panels/EnemyStatPanel'
 import { TurnPanel } from '../panels/TurnPanel'
 import { ActionLog } from '../panels/ActionLog'
 import { EndOfLevel } from '../modals/EndOfLevel'
@@ -42,6 +43,7 @@ export function GameScreen() {
         <Board />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <StatPanel />
+          <EnemyStatPanel />
           <TurnPanel />
           <ActionLog />
         </div>
