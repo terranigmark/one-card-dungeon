@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-skin="retro" data-mode="dark" data-palette="classic" data-type="arcade" data-density="cozy" data-decor="standard">
+<html lang="en" data-skin="retro" data-mode="dark" data-palette="classic" data-type="arcade" data-density="cozy" data-decor="standard" data-layout="stacked">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -24,7 +24,7 @@
       try {
         var t = JSON.parse(localStorage.getItem('ocd:tweaks') || '{}')
         var d = document.documentElement
-        ;['skin', 'mode', 'palette', 'type', 'density', 'decor'].forEach(function (k) {
+        ;['skin', 'mode', 'palette', 'type', 'density', 'decor', 'layout'].forEach(function (k) {
           if (t[k]) d.dataset[k] = t[k]
         })
       } catch (e) {

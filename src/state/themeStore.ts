@@ -12,6 +12,9 @@ export type Density = 'cozy' | 'compact'
 export type Decor = 'minimal' | 'standard' | 'ornate'
 export type Skin = 'retro' | 'modern'
 export type Mode = 'dark' | 'light'
+// Mobile-only: how the panels below the board are arranged. 'stacked' is the
+// vertical column; 'carousel' is a swipeable, dot-paginated single-card view.
+export type Layout = 'stacked' | 'carousel'
 
 export interface ThemeTweaks {
   skin: Skin
@@ -20,6 +23,7 @@ export interface ThemeTweaks {
   type: TypeFace
   density: Density
   decor: Decor
+  layout: Layout
 }
 
 export const TWEAK_DEFAULTS: ThemeTweaks = {
@@ -29,6 +33,7 @@ export const TWEAK_DEFAULTS: ThemeTweaks = {
   type: 'arcade',
   density: 'cozy',
   decor: 'standard',
+  layout: 'stacked',
 }
 
 // Allowed values per axis. Doubles as a guard for persisted values that may
@@ -40,6 +45,7 @@ export const TWEAK_OPTIONS: { [K in keyof ThemeTweaks]: readonly ThemeTweaks[K][
   type: ['arcade', 'bitmap', 'terminal'],
   density: ['cozy', 'compact'],
   decor: ['minimal', 'standard', 'ornate'],
+  layout: ['stacked', 'carousel'],
 }
 
 // NOTE: this key is duplicated in index.html's pre-paint boot script — keep both
@@ -76,6 +82,7 @@ function applyTweaks(t: ThemeTweaks): void {
   el.dataset.type = t.type
   el.dataset.density = t.density
   el.dataset.decor = t.decor
+  el.dataset.layout = t.layout
 }
 
 interface ThemeStore {

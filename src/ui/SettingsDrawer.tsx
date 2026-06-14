@@ -9,8 +9,11 @@ const DIFFICULTIES: Difficulty[] = ['faithful', 'aggressive']
 // Appearance axes, surfaced as picker rows. `retroOnly` rows are hidden when
 // the Modern skin is active (they only affect the pixel-art look). Labels for
 // the axis and each option come from the active language's bundle.
+// `layout` is a ThemeTweak but not an appearance axis — it has its own settings
+// section, so exclude it here to keep the t.appearance[...] lookups well-typed.
+type AppearanceAxis = Exclude<keyof ThemeTweaks, 'layout'>
 const APPEARANCE: Array<{
-  axis: keyof ThemeTweaks
+  axis: AppearanceAxis
   options: string[]
   retroOnly?: boolean
 }> = [
@@ -90,23 +93,23 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <h3>{t.settings.expansion}</h3>
+          <h3>{t.settings.layout}</h3>
           <div className="row" style={{ marginTop: 8 }}>
             <button
-              className={settings.treasureChests ? 'primary' : ''}
-              onClick={() => dispatch({ type: 'SET_TREASURE', enabled: true })}
+              className={tweaks.layout === 'stacked' ? 'primary' : ''}
+              onClick={() => setTweak('layout', 'stacked')}
             >
-              {t.settings.expansionOn}
+              {t.settings.layoutStacked}
             </button>
             <button
-              className={!settings.treasureChests ? 'primary' : ''}
-              onClick={() => dispatch({ type: 'SET_TREASURE', enabled: false })}
+              className={tweaks.layout === 'carousel' ? 'primary' : ''}
+              onClick={() => setTweak('layout', 'carousel')}
             >
-              {t.settings.expansionOff}
+              {t.settings.layoutCarousel}
             </button>
           </div>
           <p className="hint" style={{ marginTop: 8 }}>
-            {t.settings.expansionHint}
+            {t.settings.layoutHint}
           </p>
         </div>
 

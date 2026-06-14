@@ -185,6 +185,7 @@ const en = {
     levelPill: (level: number, enemiesPlural: string) => `Level ${level}/12 · ${enemiesPlural}`,
     aiTag: (difficulty: string) => `${difficulty} AI`,
     settingsButton: '⚙ Settings',
+    goToCard: (n: number) => `Go to card ${n}`,
   },
 
   gameOver: {
@@ -209,6 +210,12 @@ const en = {
     aiHint:
       "Faithful follows the rulebook's kiting behaviour. Aggressive coordinates monsters to " +
       'maximise the damage they deal each turn.',
+    layout: 'Mobile layout',
+    layoutStacked: 'Stacked',
+    layoutCarousel: 'Carousel',
+    layoutHint:
+      'On phones, choose how the panels under the board are arranged: a vertical stack you scroll, ' +
+      'or a swipeable carousel showing one card at a time. No effect on wide screens.',
     expansion: 'Expansion: Treasure Chests',
     expansionOn: 'On',
     expansionOff: 'Off',
@@ -450,6 +457,7 @@ const es: Messages = {
     levelPill: (level: number, enemiesPlural: string) => `Nivel ${level}/12 · ${enemiesPlural}`,
     aiTag: (difficulty: string) => `IA ${difficulty}`,
     settingsButton: '⚙ Ajustes',
+    goToCard: (n: number) => `Ir a la tarjeta ${n}`,
   },
 
   gameOver: {
@@ -476,6 +484,13 @@ const es: Messages = {
     aiHint:
       'Fiel sigue el comportamiento de pateo del reglamento. Agresivo coordina a los monstruos ' +
       'para maximizar el daño que infligen cada turno.',
+    layout: 'Diseño móvil',
+    layoutStacked: 'Apilado',
+    layoutCarousel: 'Carrusel',
+    layoutHint:
+      'En el móvil, elige cómo se organizan los paneles bajo el tablero: una pila vertical con ' +
+      'desplazamiento, o un carrusel deslizable que muestra una tarjeta a la vez. Sin efecto en ' +
+      'pantallas anchas.',
     expansion: 'Expansión: cofres del tesoro',
     expansionOn: 'Sí',
     expansionOff: 'No',
