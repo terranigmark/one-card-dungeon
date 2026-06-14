@@ -108,6 +108,82 @@ export const LEVELS: LevelConfig[] = [
 
 export const TOTAL_LEVELS = LEVELS.length
 
+// ---------------------------------------------------------------------------
+// M'Guf-yn Returns — boss levels.
+//
+// On levels 3, 6, 9 and 12 the expansion lets the player OPT IN to a boss
+// fight. A boss arena shrinks the grid by removing the (0,0) and (4,4) corners
+// (the `voids`), spawns a single boss in the dead centre (2,2) and clears the
+// pillars so the duel has room. Bosses have more than 6 Health and are drawn on
+// a 12-sided die. The hero starts on a corner that still exists — bottom-left
+// for the side-1 cards (3/9), top-right for the side-2 cards (6/12) whose usual
+// (4,4) start is now a void.
+// ---------------------------------------------------------------------------
+
+const BOSS_VOIDS: Coord[] = [C(0, 0), C(4, 4)]
+
+// Column obstacles read off the printed boss cards. The rulebook lists them in
+// y-up (bottom-left origin) coordinates; the engine is y-down, so each y is
+// flipped with `4 - y` via Cy().
+const Cy = (x: number, yUp: number): Coord => C(x, 4 - yUp)
+
+interface BossSpec {
+  level: number
+  side: 1 | 2
+  orientation: 0 | 180
+  kind: MonsterKind
+  monster: MonsterStats
+  /** 'red' lava cards (levels 3/9) vs 'blue' cards (levels 6/12). */
+  palette: 'red' | 'blue'
+  /** Column obstacles, given in the card's y-up coordinates. */
+  columns: Coord[]
+}
+
+function boss(s: BossSpec): LevelConfig {
+  return {
+    level: s.level,
+    side: s.side,
+    orientation: s.orientation,
+    walls: s.columns,
+    heroStart: s.side === 1 ? C(0, 4) : C(4, 0),
+    monsterSpawns: [C(2, 2)],
+    monster: s.monster,
+    monsterKind: s.kind,
+    voids: BOSS_VOIDS.map((c) => ({ ...c })),
+    palette: s.palette,
+    isBoss: true,
+  }
+}
+
+/** Boss variants keyed by level number (3 / 6 / 9 / 12). Stats: HP/SPD/ATK/DEF/RNG. */
+export const BOSS_LEVELS: Record<number, LevelConfig> = {
+  3: boss({
+    level: 3, side: 1, orientation: 0, kind: 'lizardTroll', palette: 'red',
+    monster: { health: 7, speed: 3, attack: 7, defense: 4, range: 3 },
+    columns: [Cy(3, 1), Cy(1, 3)],
+  }),
+  6: boss({
+    level: 6, side: 2, orientation: 180, kind: 'skeletonWarrior', palette: 'blue',
+    monster: { health: 8, speed: 3, attack: 6, defense: 5, range: 5 },
+    columns: [Cy(2, 1), Cy(3, 1), Cy(2, 3)],
+  }),
+  9: boss({
+    level: 9, side: 1, orientation: 180, kind: 'giantMantis', palette: 'red',
+    monster: { health: 10, speed: 6, attack: 7, defense: 6, range: 3 },
+    columns: [Cy(3, 1), Cy(1, 3)],
+  }),
+  12: boss({
+    level: 12, side: 2, orientation: 0, kind: 'mgufyn', palette: 'blue',
+    monster: { health: 12, speed: 6, attack: 8, defense: 7, range: 6 },
+    columns: [Cy(2, 1), Cy(1, 3), Cy(2, 3)],
+  }),
+}
+
+/** Whether a level index (0-based) is one of the boss levels (3/6/9/12). */
+export function isBossLevelIndex(idx: number): boolean {
+  return (idx + 1) % 3 === 0
+}
+
 /**
  * Where the Treasure Chest sits: the exit stairs "opposite to the entrance"
  * (the hero's start), i.e. the diagonally opposite corner. If that tile is taken
@@ -118,6 +194,7 @@ export function chestTileFor(cfg: LevelConfig): Coord {
   const target = rotate180(cfg.heroStart)
   const occupied = (c: Coord): boolean =>
     cfg.walls.some((w) => coordEq(w, c)) ||
+    (cfg.voids ?? []).some((v) => coordEq(v, c)) ||
     cfg.monsterSpawns.some((s) => coordEq(s, c)) ||
     coordEq(c, cfg.heroStart)
   if (!occupied(target)) return target

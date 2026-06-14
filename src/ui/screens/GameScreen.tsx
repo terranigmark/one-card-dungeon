@@ -8,6 +8,7 @@ import { EnemyStatPanel } from '../panels/EnemyStatPanel'
 import { TurnPanel } from '../panels/TurnPanel'
 import { ActionLog } from '../panels/ActionLog'
 import { EndOfLevel } from '../modals/EndOfLevel'
+import { BossChoice } from '../modals/BossChoice'
 
 export function GameScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
   const state = useGameState()
@@ -32,7 +33,10 @@ export function GameScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
       <div className="topbar">
         <span className="title">{t.app.title}</span>
         <span className="level-pill">
-          {t.gameScreen.levelPill(cfg.level, t.enemy[cfg.monsterKind].many)}
+          {t.gameScreen.levelPill(
+            cfg.level,
+            t.enemy[state.monsters[0]?.kind ?? cfg.monsterKind].many,
+          )}
         </span>
         <span className="spacer" />
         <span className="tag">{t.gameScreen.aiTag(t.difficulty[state.settings.difficulty])}</span>
@@ -52,6 +56,7 @@ export function GameScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
       </div>
 
       {state.phase === 'EndOfLevel' && <EndOfLevel />}
+      {state.phase === 'BossChoice' && <BossChoice />}
     </div>
   )
 }

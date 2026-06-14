@@ -423,6 +423,35 @@ h1, h2, h3 {
   opacity: 1;
 }
 
+/* Boss-arena palettes (M'Guf-yn Returns) — retint the board to match the
+   printed card. Overriding the tile/grout/stone vars cascades to every tile and
+   pillar; the grid gaps reveal `--grout`, so it reads as lava cracks / seams. */
+.board-wrap[data-boss-palette='red'] {
+  --tile: #7e2c1d;
+  --tile-2: #6d2417;
+  --tile-3: #8c3826;
+  --grout: #e2611c; /* glowing lava in the grid lines */
+  --stone: #6f5f86; /* purple rock columns */
+  --stone-dark: #463a5e;
+}
+.board-wrap[data-boss-palette='blue'] {
+  --tile: #3a6aa4;
+  --tile-2: #336097;
+  --tile-3: #4577b3;
+  --grout: #14304f;
+  --stone: #5688c0; /* blue crystal columns */
+  --stone-dark: #355d86;
+}
+/* The default tile bevel uses a warm/brown inner shadow that muddies these
+   cooler palettes — swap it for a neutral bevel so the colours read true. */
+.board-wrap[data-boss-palette] .tile {
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.24),
+    inset 3px 0 0 rgba(255, 255, 255, 0.12),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.3),
+    inset -3px 0 0 rgba(0, 0, 0, 0.18);
+}
+
 /* ==================== dice ==================== */
 .die {
   position: relative;
@@ -516,6 +545,44 @@ h1, h2, h3 {
   box-shadow:
     inset 0 0 0 3px var(--gold),
     inset 3px 3px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* 12-sided boss die: a dodecagon, always numeric. The gold rim sells "boss". */
+.die.d12 {
+  --dodeca: polygon(
+    50% 0%, 75% 6.7%, 93.3% 25%, 100% 50%, 93.3% 75%, 75% 93.3%,
+    50% 100%, 25% 93.3%, 6.7% 75%, 0% 50%, 6.7% 25%, 25% 6.7%
+  );
+  clip-path: var(--dodeca);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 220, 120, 0.55),
+    inset 3px 3px 0 rgba(255, 255, 255, 0.18),
+    inset -3px -4px 0 rgba(0, 0, 0, 0.32);
+}
+.die.d12 .num {
+  font-size: 0.95em;
+}
+html[data-skin='modern'] .die.d12 {
+  border-radius: 0;
+  clip-path: var(--dodeca);
+}
+
+/* a void tile: a corner removed from a boss arena — a hole, not a tile */
+.tile.void {
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+.tile.void::after {
+  content: '';
+  position: absolute;
+  inset: 14%;
+  background: var(--edge, rgba(0, 0, 0, 0.45));
+  opacity: 0.32;
+  clip-path: polygon(
+    50% 4%, 70% 14%, 86% 30%, 96% 50%, 86% 70%, 70% 86%,
+    50% 96%, 30% 86%, 14% 70%, 4% 50%, 14% 30%, 30% 14%
+  );
 }
 
 /* ==================== panels ==================== */
@@ -732,13 +799,125 @@ h1, h2, h3 {
 }
 
 /* ==================== class select ==================== */
+/* game-mode (Classic / M'Guf-yn Returns) toggle on the start screen */
+.mode-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6px * var(--sp));
+  margin-bottom: calc(4px * var(--sp));
+}
+.mode-toggle .mode-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  color: var(--gold);
+  text-transform: uppercase;
+}
+.mode-toggle .hint {
+  max-width: 460px;
+  text-align: center;
+}
+
+/* "D12" tag next to a boss name in the enemy panel */
+.d12-tag {
+  font-size: var(--fs-hint);
+  color: var(--gold);
+  vertical-align: super;
+}
+
+/* boss opt-in modal */
+.boss-portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6px * var(--sp));
+}
+.boss-portrait .die {
+  width: 64px;
+  height: 64px;
+  font-size: 30px;
+}
+.boss-portrait .boss-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  color: var(--red);
+  text-transform: uppercase;
+}
+.boss-stats {
+  justify-content: center;
+}
+
 .classes {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: calc(14px * var(--sp));
 }
+
+/* Carousel position dots — hidden unless the mobile carousel is active. */
+.carousel-dots {
+  display: none;
+}
+.carousel-dots .dot {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 2px solid var(--frame);
+  background: var(--card-black);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+  clip-path: none;
+  transition: width 0.15s ease, background 0.15s ease;
+}
+.carousel-dots .dot.active {
+  width: 22px;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+/* On mobile, swap the card grid for a horizontal swipe carousel: one card at a
+   time, snap-centred, with the neighbours peeking. Vertical padding keeps the
+   selected card's glow from being clipped by the scroll container. */
 @media (max-width: 640px) {
-  .classes { grid-template-columns: 1fr; }
+  /* `.app` is a centered column flex, so the centre column is sized to its
+     content. Stretch it to the viewport here so the carousel's wide scroll
+     content can't inflate the page width. */
+  .center-screen {
+    align-self: stretch;
+    width: 100%;
+  }
+  .classes {
+    display: flex;
+    grid-template-columns: none;
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0;
+    padding: 14px 9%;
+    gap: calc(12px * var(--sp));
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .classes::-webkit-scrollbar {
+    display: none;
+  }
+  .classes .class-card {
+    flex: 0 0 82%;
+    scroll-snap-align: center;
+  }
+  /* "No Class" is a full-width row in the grid; as a carousel slide it becomes a
+     normal vertical card like the rest. */
+  .classes .class-card.no-class {
+    grid-column: auto;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 130px;
+  }
+  .carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: calc(-8px * var(--sp));
+  }
 }
 .class-card {
   text-align: center;
@@ -820,6 +999,10 @@ h1, h2, h3 {
   text-align: center;
   position: relative;
   z-index: 1;
+  /* As a flex child of `.app`, allow shrinking below content width so narrow
+     viewports don't overflow horizontally (lets the title wrap and the class
+     carousel clip to the screen). */
+  min-width: 0;
 }
 .center-screen h1 {
   font-size: var(--fs-h1);

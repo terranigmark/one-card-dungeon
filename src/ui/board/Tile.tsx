@@ -1,9 +1,11 @@
 import type { MonsterKind } from '../../engine/types'
 import { Die } from './Die'
-import { KIND_EMOJI } from './kinds'
+import { isBossKind, KIND_EMOJI } from './kinds'
 
 interface TileProps {
   wall: boolean
+  /** A removed boss-arena tile: render an empty hole, never interactive. */
+  hole?: boolean
   hero: boolean
   heroHealth: number
   monster?: { health: number; kind: MonsterKind }
@@ -13,7 +15,9 @@ interface TileProps {
   interactive: boolean
 }
 
-export function Tile({ wall, hero, heroHealth, monster, chest, highlight, onClick, interactive }: TileProps) {
+export function Tile({ wall, hole, hero, heroHealth, monster, chest, highlight, onClick, interactive }: TileProps) {
+  if (hole) return <div className="tile void" aria-hidden="true" />
+
   const cls = [
     'tile',
     wall ? 'wall' : '',
@@ -32,6 +36,7 @@ export function Tile({ wall, hero, heroHealth, monster, chest, highlight, onClic
         <Die
           value={monster.health}
           color="red"
+          d12={isBossKind(monster.kind)}
           badge={KIND_EMOJI[monster.kind]}
           title={`${monster.kind} — ${monster.health} HP`}
         />
