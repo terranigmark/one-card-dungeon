@@ -39,6 +39,33 @@ export const CLASS_LIST: ClassDef[] = [
     timing: 'level',
   },
   {
+    id: 'necromancer',
+    name: 'Necromancer',
+    blurb: 'Trades life for death.',
+    ability: 'Once per level, lose 1 Health to deal 1 damage to an enemy in Range and Line of Sight.',
+    timing: 'level',
+  },
+  {
+    id: 'cleric',
+    name: 'Cleric',
+    blurb: 'Blessed by fortune.',
+    ability: 'When you roll triples (e.g. 3-3-3), raise each die by 2 (max 6).',
+  },
+  {
+    id: 'knight',
+    name: 'Knight',
+    blurb: 'Master of focused force.',
+    ability: 'Once per level, stack two energy dice on a single skill.',
+    timing: 'level',
+  },
+  {
+    id: 'rogue',
+    name: 'Rogue',
+    blurb: 'Quick hands, sharp edges.',
+    ability: 'Once per level, raise every energy die you rolled by 1 (max 6).',
+    timing: 'level',
+  },
+  {
     id: 'none',
     name: 'No Class',
     blurb: 'Just you, three dice, and the dungeon.',

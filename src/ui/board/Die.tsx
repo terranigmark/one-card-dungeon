@@ -1,4 +1,4 @@
-export type DieColor = 'green' | 'red' | 'black' | 'white'
+export type DieColor = 'green' | 'red' | 'black' | 'white' | 'yellow'
 
 interface DieProps {
   value: number

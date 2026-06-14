@@ -10,7 +10,7 @@ function mob(over: Partial<Monster> & Pick<Monster, 'id' | 'pos'>): Monster {
 }
 
 function aiState(hero: Coord, monsters: Monster[], walls: Coord[] = []): GameState {
-  const base = createInitialState({ difficulty: 'faithful', seed: 1 })
+  const base = createInitialState({ difficulty: 'faithful', seed: 1, treasureChests: false })
   return { ...base, phase: 'MonsterMove', hero: { ...base.hero, pos: hero }, monsters, walls }
 }
 

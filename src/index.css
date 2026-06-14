@@ -458,6 +458,11 @@ h1, h2, h3 {
   color: #222;
   border: 2px solid #968b73;
 }
+.die.yellow {
+  background: linear-gradient(180deg, #f4cf52 0 46%, #d2a51f 46%);
+  color: #3a2a05;
+  border: 2px solid #7a5c11;
+}
 .die .num {
   font-size: 1.1em;
 }
@@ -630,13 +635,24 @@ h1, h2, h3 {
 .slot .slot-die {
   display: inline-flex;
   flex: none;
-  width: 30px;
+  gap: 3px;
+  width: auto;
   height: 30px;
 }
 .slot .slot-die .die {
   width: 30px;
   height: 30px;
   font-size: 14px;
+}
+.chest-spend {
+  display: flex;
+  flex-direction: column;
+  gap: calc(6px * var(--sp));
+  margin: calc(6px * var(--sp)) 0;
+}
+.chest-spend .row {
+  flex-wrap: wrap;
+  gap: calc(6px * var(--sp));
 }
 .slot .empty-die {
   width: 30px;

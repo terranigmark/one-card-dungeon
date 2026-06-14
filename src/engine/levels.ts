@@ -1,5 +1,5 @@
 import type { Coord, LevelConfig, MonsterKind, MonsterStats } from './types'
-import { rotate180 } from './grid'
+import { allCoords, coordEq, rotate180 } from './grid'
 
 // ---------------------------------------------------------------------------
 // The 12 dungeon levels.
@@ -107,3 +107,29 @@ export const LEVELS: LevelConfig[] = [
 ]
 
 export const TOTAL_LEVELS = LEVELS.length
+
+/**
+ * Where the Treasure Chest sits: the exit stairs "opposite to the entrance"
+ * (the hero's start), i.e. the diagonally opposite corner. If that tile is taken
+ * by a wall or a monster spawn (level 8's far corner is), fall back to the
+ * nearest free tile so the chest is always placeable.
+ */
+export function chestTileFor(cfg: LevelConfig): Coord {
+  const target = rotate180(cfg.heroStart)
+  const occupied = (c: Coord): boolean =>
+    cfg.walls.some((w) => coordEq(w, c)) ||
+    cfg.monsterSpawns.some((s) => coordEq(s, c)) ||
+    coordEq(c, cfg.heroStart)
+  if (!occupied(target)) return target
+  let best: Coord = target
+  let bestDist = Infinity
+  for (const c of allCoords()) {
+    if (occupied(c)) continue
+    const dist = Math.abs(c.x - target.x) + Math.abs(c.y - target.y)
+    if (dist < bestDist) {
+      bestDist = dist
+      best = c
+    }
+  }
+  return best
+}

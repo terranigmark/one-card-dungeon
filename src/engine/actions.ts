@@ -14,7 +14,10 @@ export type Action =
   // adventurer phase
   | { type: 'MOVE_HERO'; to: Coord }
   | { type: 'ATTACK'; targetId: number }
+  | { type: 'OPEN_CHEST' }
   | { type: 'END_ADVENTURER' }
+  // treasure chest loot (M'Guf-yn Returns)
+  | { type: 'SET_CHEST_SPEND'; slot: Skill; amount: number }
   // monster phases (driven by the UI / tests)
   | { type: 'RESOLVE_MONSTER_MOVE' }
   | { type: 'RESOLVE_MONSTER_ATTACK' }
@@ -25,6 +28,12 @@ export type Action =
   | { type: 'ABILITY_BARBARIAN_REROLL' }
   | { type: 'ABILITY_RANGER_RANGE' }
   | { type: 'ABILITY_WIZARD_REROLL' }
+  // expansion class abilities (M'Guf-yn Returns)
+  | { type: 'ABILITY_NECROMANCER_SMITE'; targetId: number }
+  | { type: 'ABILITY_CLERIC_BLESS' }
+  | { type: 'ABILITY_KNIGHT_DOUBLE' }
+  | { type: 'ABILITY_ROGUE_BOOST' }
   // meta
   | { type: 'SET_DIFFICULTY'; difficulty: Difficulty }
+  | { type: 'SET_TREASURE'; enabled: boolean }
   | { type: 'RESTART' }

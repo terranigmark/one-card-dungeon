@@ -1,4 +1,4 @@
-import type { EnergyDice, HeroBase, SkillTotals } from './types'
+import type { ChestSpend, EnergyDice, HeroBase, SkillTotals } from './types'
 
 /**
  * Damage dealt to the hero in the Monster Attack phase:
@@ -17,17 +17,31 @@ export function attackCostPerHit(monsterDefense: number): number {
   return Math.max(1, monsterDefense)
 }
 
-/** Resolve the assigned energy dice into per-skill totals for the turn. */
-export function computeTotals(base: HeroBase, energy: EnergyDice): SkillTotals {
+/**
+ * Resolve the assigned energy dice into per-skill totals for the turn. A slot may
+ * carry a second die (Knight ability), and the planned Treasure Chest loot, if
+ * any, is added to its single chosen skill.
+ */
+export function computeTotals(
+  base: HeroBase,
+  energy: EnergyDice,
+  chest?: ChestSpend | null,
+): SkillTotals {
+  const secondary = energy.secondary ?? {}
   const dieFor = (slot: keyof SkillTotals): number => {
-    const idx = energy.assignment[slot]
-    if (idx === undefined) return 0
-    return energy.rolled[idx] ?? 0
+    let sum = 0
+    const primary = energy.assignment[slot]
+    if (primary !== undefined) sum += energy.rolled[primary] ?? 0
+    const extra = secondary[slot]
+    if (extra !== undefined) sum += energy.rolled[extra] ?? 0
+    return sum
   }
-  return {
+  const totals: SkillTotals = {
     speed: base.speed + dieFor('speed'),
     attack: base.attack + dieFor('attack'),
     defense: base.defense + dieFor('defense'),
     range: base.range + dieFor('range'),
   }
+  if (chest && chest.amount > 0) totals[chest.slot] += chest.amount
+  return totals
 }

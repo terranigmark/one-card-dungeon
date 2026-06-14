@@ -3,7 +3,7 @@ import { createInitialState, gameReducer } from './reducer'
 import type { Action } from './actions'
 import type { GameState, Monster } from './types'
 
-const settings = { difficulty: 'faithful' as const, seed: 1 }
+const settings = { difficulty: 'faithful' as const, seed: 1, treasureChests: false }
 const run = (s: GameState, ...actions: Action[]) => actions.reduce(gameReducer, s)
 
 function mob(over: Partial<Monster> & Pick<Monster, 'id' | 'pos'>): Monster {

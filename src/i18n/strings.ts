@@ -55,6 +55,26 @@ const en = {
       blurb: 'Arcane scholar of the dungeon.',
       ability: 'Once per level, reroll all energy dice.',
     },
+    necromancer: {
+      name: 'Necromancer',
+      blurb: 'Trades life for death.',
+      ability: 'Once per level, lose 1 Health to deal 1 damage to an enemy in Range and sight.',
+    },
+    cleric: {
+      name: 'Cleric',
+      blurb: 'Blessed by fortune.',
+      ability: 'When you roll triples (e.g. 3-3-3), raise each die by 2 (max 6).',
+    },
+    knight: {
+      name: 'Knight',
+      blurb: 'Master of focused force.',
+      ability: 'Once per level, stack two energy dice on a single skill.',
+    },
+    rogue: {
+      name: 'Rogue',
+      blurb: 'Quick hands, sharp edges.',
+      ability: 'Once per level, raise every energy die you rolled by 1 (max 6).',
+    },
     none: {
       name: 'No Class',
       blurb: 'Just you, three dice, and the dungeon.',
@@ -72,12 +92,21 @@ const en = {
     speed: 'Speed',
     attack: 'Attack',
     defense: 'Defense',
+    loot: 'Loot',
   },
 
   statPanel: {
     hint:
       "Move costs 2 (orthogonal) / 3 (diagonal) Speed. Each attack spends the target's Defense in " +
       'Attack points to remove 1 Health.',
+  },
+
+  /** Treasure Chest (M'Guf-yn Returns). */
+  chest: {
+    name: 'Treasure Chest',
+    sealedTitle: (v: number) => `Treasure Chest — Defense ${v} (blocks the way until opened)`,
+    openTitle: (v: number) => `Open the chest — needs ${v} Attack`,
+    openedTitle: (n: number) => `Opened chest — ${n} loot left`,
   },
 
   /** Monster names, singular and plural. */
@@ -111,6 +140,15 @@ const en = {
     furyReroll: '💢 Fury reroll (needs 1 HP)',
     unlockRange: '🎯 Unlock Range slot',
     keepDie: '✋ Keep selected die next turn',
+    clericBless: '✨ Bless triples (+2)',
+    knightDouble: '⚔ Stack two dice on a skill',
+    rogueBoost: '🗡 Sharpen all dice (+1)',
+    smite: (id: number) => `☠ Smite #${id} (−1 HP)`,
+    smiteHint: 'Necromancer: lose 1 Health to deal 1 damage to a target in range.',
+    openChestHint: '🧰 Click the chest to open it (needs Attack ≥ its value).',
+    lootTitle: (n: number) => `Treasure loot: ${n}`,
+    lootHint: 'Pour loot into one skill this turn — you cannot split it across skills.',
+    lootClear: 'Clear',
   },
 
   endOfLevel: {
@@ -150,6 +188,12 @@ const en = {
     aiHint:
       "Faithful follows the rulebook's kiting behaviour. Aggressive coordinates monsters to " +
       'maximise the damage they deal each turn.',
+    expansion: 'Expansion: Treasure Chests',
+    expansionOn: 'On',
+    expansionOff: 'Off',
+    expansionHint:
+      "M'Guf-yn Returns: each level spawns a Treasure Chest on the far stairs. Open it like a " +
+      'monster for loot — bonus energy you can spend across the level. Takes effect next level.',
     appearance: 'Appearance',
     appearanceHint:
       'Switch between the retro pixel look and a clean modern UI, toggle a light theme, and tune ' +
@@ -199,6 +243,17 @@ const en = {
     paladinKeep: (value: number) => `Paladin keeps a ${value} for next turn`,
     healed: (health: number) => `Rested and healed to ${health} Health`,
     upgraded: (skill: string, value: number) => `Upgraded ${skill} to ${value}`,
+    chestAppears: (value: number) => `A Treasure Chest (Defense ${value}) guards the far stairs`,
+    chestOpened: (value: number) => `Opened the chest — ${value} loot points to spend`,
+    chestSpend: (skill: string, amount: number, remaining: number) =>
+      `Spent ${amount} loot on ${skill} (${remaining} left)`,
+    necroSmite: (enemy: string, id: number, killed: boolean) =>
+      killed
+        ? `Necromancer smites ${enemy} #${id} dead (-1 HP to you)`
+        : `Necromancer smites ${enemy} #${id} (-1 HP each)`,
+    clericBless: (dice: number[]) => `Cleric's blessing: dice become ${dice.join(', ')}`,
+    knightDouble: "Knight may stack two dice on one skill this turn",
+    rogueBoost: (dice: number[]) => `Rogue sharpens the dice to ${dice.join(', ')}`,
   },
 }
 
@@ -244,6 +299,27 @@ const es: Messages = {
       blurb: 'Erudito arcano de la mazmorra.',
       ability: 'Una vez por nivel, vuelve a tirar todos los dados de energía.',
     },
+    necromancer: {
+      name: 'Nigromante',
+      blurb: 'Cambia vida por muerte.',
+      ability:
+        'Una vez por nivel, pierde 1 de Salud para infligir 1 de daño a un enemigo a Alcance y a la vista.',
+    },
+    cleric: {
+      name: 'Clérigo',
+      blurb: 'Bendecido por la fortuna.',
+      ability: 'Cuando sacas trío (p. ej. 3-3-3), sube cada dado en 2 (máx. 6).',
+    },
+    knight: {
+      name: 'Caballero',
+      blurb: 'Maestro de la fuerza concentrada.',
+      ability: 'Una vez por nivel, acumula dos dados de energía en una sola característica.',
+    },
+    rogue: {
+      name: 'Pícaro',
+      blurb: 'Manos rápidas, filos afilados.',
+      ability: 'Una vez por nivel, sube en 1 cada dado de energía que hayas tirado (máx. 6).',
+    },
     none: {
       name: 'Sin clase',
       blurb: 'Solo tú, tres dados y la mazmorra.',
@@ -259,12 +335,20 @@ const es: Messages = {
     speed: 'Velocidad',
     attack: 'Ataque',
     defense: 'Defensa',
+    loot: 'Botín',
   },
 
   statPanel: {
     hint:
       'Moverse cuesta 2 (ortogonal) / 3 (diagonal) de Velocidad. Cada ataque gasta la Defensa del ' +
       'objetivo en puntos de Ataque para quitar 1 de Salud.',
+  },
+
+  chest: {
+    name: 'Cofre del tesoro',
+    sealedTitle: (v: number) => `Cofre del tesoro — Defensa ${v} (bloquea el paso hasta abrirlo)`,
+    openTitle: (v: number) => `Abre el cofre — necesita ${v} de Ataque`,
+    openedTitle: (n: number) => `Cofre abierto — quedan ${n} de botín`,
   },
 
   enemy: {
@@ -299,6 +383,15 @@ const es: Messages = {
     furyReroll: '💢 Tirada de furia (necesita 1 PV)',
     unlockRange: '🎯 Desbloquear casilla de Alcance',
     keepDie: '✋ Conservar el dado para el próximo turno',
+    clericBless: '✨ Bendecir el trío (+2)',
+    knightDouble: '⚔ Acumular dos dados en una característica',
+    rogueBoost: '🗡 Afilar todos los dados (+1)',
+    smite: (id: number) => `☠ Castigar n.º${id} (−1 PV)`,
+    smiteHint: 'Nigromante: pierde 1 de Salud para infligir 1 de daño a un objetivo a Alcance.',
+    openChestHint: '🧰 Haz clic en el cofre para abrirlo (necesita Ataque ≥ su valor).',
+    lootTitle: (n: number) => `Botín del tesoro: ${n}`,
+    lootHint: 'Vierte el botín en una sola característica este turno: no puedes repartirlo.',
+    lootClear: 'Limpiar',
   },
 
   endOfLevel: {
@@ -340,6 +433,13 @@ const es: Messages = {
     aiHint:
       'Fiel sigue el comportamiento de pateo del reglamento. Agresivo coordina a los monstruos ' +
       'para maximizar el daño que infligen cada turno.',
+    expansion: 'Expansión: cofres del tesoro',
+    expansionOn: 'Sí',
+    expansionOff: 'No',
+    expansionHint:
+      'M\'Guf-yn Returns: cada nivel coloca un cofre del tesoro en las escaleras opuestas. Ábrelo ' +
+      'como a un monstruo para obtener botín: energía extra que puedes gastar durante el nivel. Se ' +
+      'aplica en el próximo nivel.',
     appearance: 'Apariencia',
     appearanceHint:
       'Cambia entre el aspecto retro de píxeles y una interfaz moderna y limpia, activa un tema ' +
@@ -391,6 +491,17 @@ const es: Messages = {
     paladinKeep: (value: number) => `El Paladín conserva un ${value} para el próximo turno`,
     healed: (health: number) => `Descansas y te curas a ${health} de Salud`,
     upgraded: (skill: string, value: number) => `${skill} mejorado a ${value}`,
+    chestAppears: (value: number) => `Un cofre del tesoro (Defensa ${value}) custodia las escaleras opuestas`,
+    chestOpened: (value: number) => `Abres el cofre: ${value} puntos de botín para gastar`,
+    chestSpend: (skill: string, amount: number, remaining: number) =>
+      `Gastas ${amount} de botín en ${skill} (quedan ${remaining})`,
+    necroSmite: (enemy: string, id: number, killed: boolean) =>
+      killed
+        ? `El Nigromante fulmina a ${enemy} n.º${id} (-1 PV para ti)`
+        : `El Nigromante castiga a ${enemy} n.º${id} (-1 PV cada uno)`,
+    clericBless: (dice: number[]) => `Bendición del Clérigo: los dados pasan a ${dice.join(', ')}`,
+    knightDouble: 'El Caballero puede acumular dos dados en una característica este turno',
+    rogueBoost: (dice: number[]) => `El Pícaro afila los dados a ${dice.join(', ')}`,
   },
 }
 
@@ -438,5 +549,19 @@ export function formatLog(entry: LogEntry, t: Messages): string {
       return t.log.healed(entry.health)
     case 'upgraded':
       return t.log.upgraded(t.stats[entry.skill], entry.value)
+    case 'chestAppears':
+      return t.log.chestAppears(entry.value)
+    case 'chestOpened':
+      return t.log.chestOpened(entry.value)
+    case 'chestSpend':
+      return t.log.chestSpend(t.stats[entry.slot], entry.amount, entry.remaining)
+    case 'necroSmite':
+      return t.log.necroSmite(t.enemy[entry.kind].one, entry.id, entry.killed)
+    case 'clericBless':
+      return t.log.clericBless(entry.dice)
+    case 'knightDouble':
+      return t.log.knightDouble
+    case 'rogueBoost':
+      return t.log.rogueBoost(entry.dice)
   }
 }

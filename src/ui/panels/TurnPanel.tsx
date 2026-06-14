@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useDispatch, useGameState } from '../../state/hooks'
-import type { AssignSlot } from '../../engine/types'
+import type { AssignSlot, Skill } from '../../engine/types'
 import { computeTotals } from '../../engine/rules'
+import { attackableTargets } from '../../engine/selectors'
 import { useT } from '../../i18n'
 import { Die } from '../board/Die'
 
 const BASE_SLOTS: AssignSlot[] = ['speed', 'attack', 'defense']
+const LOOT_SLOTS: Skill[] = ['speed', 'attack', 'defense', 'range']
 
 function ClassAbilityRow({ selected }: { selected: number | null }) {
   const { hero, classState, energy } = useGameState()
@@ -15,6 +17,10 @@ function ClassAbilityRow({ selected }: { selected: number | null }) {
   if (!c || c === 'none') return null
   const usedLevel = classState.usedThisLevel
   const noDice = energy.rolled.length === 0
+  const isTriple =
+    energy.rolled.length === 3 &&
+    energy.rolled[0] === energy.rolled[1] &&
+    energy.rolled[1] === energy.rolled[2]
 
   return (
     <div className="row">
@@ -47,6 +53,73 @@ function ClassAbilityRow({ selected }: { selected: number | null }) {
           {t.turn.keepDie}
         </button>
       )}
+      {c === 'cleric' && (
+        <button
+          disabled={noDice || !isTriple || !!energy.clericBoosted}
+          onClick={() => dispatch({ type: 'ABILITY_CLERIC_BLESS' })}
+        >
+          {t.turn.clericBless}
+        </button>
+      )}
+      {c === 'knight' && (
+        <button
+          disabled={usedLevel || noDice || !!energy.knightUnlocked}
+          onClick={() => dispatch({ type: 'ABILITY_KNIGHT_DOUBLE' })}
+        >
+          {t.turn.knightDouble}
+        </button>
+      )}
+      {c === 'rogue' && (
+        <button disabled={usedLevel || noDice} onClick={() => dispatch({ type: 'ABILITY_ROGUE_BOOST' })}>
+          {t.turn.rogueBoost}
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** Treasure loot allocation for the turn — pour the chest into one skill only. */
+function ChestSpendRow() {
+  const state = useGameState()
+  const dispatch = useDispatch()
+  const t = useT()
+  const chest = state.chest
+  if (!chest || !chest.opened || chest.remaining <= 0) return null
+
+  const spend = state.chestSpend
+  const amount = spend?.amount ?? 0
+  const slot: Skill = spend?.slot ?? 'attack'
+  const set = (s: Skill, amt: number) =>
+    dispatch({ type: 'SET_CHEST_SPEND', slot: s, amount: amt })
+
+  return (
+    <div className="chest-spend">
+      <p className="hint">
+        🧰 {t.turn.lootTitle(chest.remaining)} — {t.turn.lootHint}
+      </p>
+      <div className="row">
+        {LOOT_SLOTS.map((s) => (
+          <button
+            key={s}
+            className={spend && spend.slot === s ? 'primary' : ''}
+            onClick={() => set(s, amount > 0 ? amount : 1)}
+          >
+            {t.stats[s]}
+          </button>
+        ))}
+      </div>
+      <div className="row" style={{ alignItems: 'center' }}>
+        <button disabled={amount <= 0} onClick={() => set(slot, amount - 1)}>
+          −
+        </button>
+        <strong>{amount}</strong>
+        <button disabled={amount >= chest.remaining} onClick={() => set(slot, amount + 1)}>
+          +
+        </button>
+        <button disabled={amount <= 0} onClick={() => set(slot, 0)}>
+          {t.turn.lootClear}
+        </button>
+      </div>
     </div>
   )
 }
@@ -56,7 +129,7 @@ export function TurnPanel() {
   const dispatch = useDispatch()
   const t = useT()
   const [selected, setSelected] = useState<number | null>(null)
-  const { phase, energy, hero } = state
+  const { phase, energy, hero, classState, chest } = state
 
   if (phase === 'MonsterMove') {
     return (
@@ -75,10 +148,29 @@ export function TurnPanel() {
     )
   }
   if (phase === 'Adventurer') {
+    const canSmite =
+      hero.classId === 'necromancer' && !classState.usedThisLevel && hero.health >= 2
+    const smiteTargets = canSmite ? attackableTargets(state) : []
     return (
       <div className="panel">
         <h3>{t.turn.yourMove}</h3>
         <p className="hint">{t.turn.yourMoveHint}</p>
+        {chest && !chest.opened && <p className="hint">{t.turn.openChestHint}</p>}
+        {canSmite && smiteTargets.length > 0 && (
+          <>
+            <p className="hint">{t.turn.smiteHint}</p>
+            <div className="row">
+              {smiteTargets.map((target) => (
+                <button
+                  key={target.id}
+                  onClick={() => dispatch({ type: 'ABILITY_NECROMANCER_SMITE', targetId: target.id })}
+                >
+                  {t.turn.smite(target.id)}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <button className="primary" onClick={() => dispatch({ type: 'END_ADVENTURER' })}>
           {t.turn.endTurn}
         </button>
@@ -100,18 +192,22 @@ export function TurnPanel() {
   }
 
   const slots: AssignSlot[] = energy.rangerUnlocked ? [...BASE_SLOTS, 'range'] : BASE_SLOTS
+  const secondary = energy.secondary ?? {}
   const dieToSlot = new Map<number, AssignSlot>()
   for (const [slot, idx] of Object.entries(energy.assignment)) {
     if (idx !== undefined) dieToSlot.set(idx, slot as AssignSlot)
   }
+  for (const [slot, idx] of Object.entries(secondary)) {
+    if (idx !== undefined) dieToSlot.set(idx, slot as AssignSlot)
+  }
   const allAssigned = energy.rolled.every((_, i) => dieToSlot.has(i))
-  const totals = computeTotals(hero.base, energy)
+  const totals = computeTotals(hero.base, energy, state.chestSpend)
 
   const onSlotClick = (slot: AssignSlot) => {
     if (selected !== null) {
       dispatch({ type: 'ASSIGN_DIE', slot, dieIndex: selected })
       setSelected(null)
-    } else if (energy.assignment[slot] !== undefined) {
+    } else if (energy.assignment[slot] !== undefined || secondary[slot] !== undefined) {
       dispatch({ type: 'UNASSIGN_DIE', slot })
     }
   }
@@ -139,7 +235,8 @@ export function TurnPanel() {
       <div className="slots">
         {slots.map((slot) => {
           const idx = energy.assignment[slot]
-          const filled = idx !== undefined
+          const extra = secondary[slot]
+          const filled = idx !== undefined || extra !== undefined
           return (
             <div
               key={slot}
@@ -163,7 +260,8 @@ export function TurnPanel() {
               </span>
               {filled ? (
                 <span className="slot-die">
-                  <Die value={energy.rolled[idx]} color="black" />
+                  {idx !== undefined && <Die value={energy.rolled[idx]} color="black" />}
+                  {extra !== undefined && <Die value={energy.rolled[extra]} color="black" />}
                 </span>
               ) : (
                 <span className="empty-die" />
@@ -173,6 +271,7 @@ export function TurnPanel() {
         })}
       </div>
       <ClassAbilityRow selected={selected} />
+      <ChestSpendRow />
       <button className="primary" disabled={!allAssigned} onClick={() => dispatch({ type: 'CONFIRM_ENERGY' })}>
         {t.turn.confirm}
       </button>
