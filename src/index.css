@@ -323,7 +323,10 @@ h1, h2, h3 {
 }
 @media (max-width: 860px) {
   .game-layout {
-    grid-template-columns: 1fr;
+    /* minmax(0, …) (not a bare 1fr) so the single column can shrink below the
+       board's content min-size; a bare 1fr keeps its auto min-width and lets the
+       board overflow the viewport horizontally on narrow phones. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -442,9 +445,24 @@ h1, h2, h3 {
   --stone: #5688c0; /* blue crystal columns */
   --stone-dark: #355d86;
 }
+/* Boss floors are deeply saturated, so the default move/attack tints (low-alpha
+   green / red) wash out — the red attack ring all but vanishes on the red floor.
+   Boost the fill opacity and swap to bright, high-contrast borders so reachable
+   and attackable tiles stay legible on every arena palette. */
+.board-wrap[data-boss-palette] {
+  --hl-move: rgba(98, 213, 108, 0.5);
+  --hl-move-border: #b6ffbe;
+  --hl-attack: rgba(255, 120, 92, 0.55);
+  --hl-attack-border: #ffe1b0;
+}
+
 /* The default tile bevel uses a warm/brown inner shadow that muddies these
-   cooler palettes — swap it for a neutral bevel so the colours read true. */
-.board-wrap[data-boss-palette] .tile {
+   cooler palettes — swap it for a neutral bevel so the colours read true.
+   Excludes highlighted tiles: this selector (0,3,0) out-specifies `.tile.hl-move`
+   / `.hl-attack` (0,2,0) and shares the box-shadow property, so without the
+   :not() it would clobber the move/attack rings and they'd vanish on boss
+   floors — the very thing that made reachable tiles unreadable there. */
+.board-wrap[data-boss-palette] .tile:not(.hl-move):not(.hl-attack) {
   box-shadow:
     inset 0 3px 0 rgba(255, 255, 255, 0.24),
     inset 3px 0 0 rgba(255, 255, 255, 0.12),
@@ -653,6 +671,69 @@ html[data-skin='modern'] .die.d12 {
   color: var(--red);
 }
 
+/* hero-vs-monster comparison panel — your value | stat | monster value */
+.compare-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: calc(8px * var(--sp));
+  border-bottom: 2px dotted var(--frame-dim);
+  padding-bottom: calc(8px * var(--sp));
+}
+.compare-you,
+.compare-foe {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  color: var(--gold);
+  text-transform: uppercase;
+  text-shadow: 1px 1px 0 var(--edge);
+  min-width: 0;
+}
+.compare-foe {
+  text-align: right;
+}
+.compare-grid {
+  display: flex;
+  flex-direction: column;
+  gap: calc(6px * var(--sp));
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: calc(8px * var(--sp));
+  background: var(--card-black);
+  border: 2px solid var(--frame-dim);
+  padding: calc(6px * var(--sp)) calc(10px * var(--sp));
+}
+.compare-row .ck {
+  font-family: var(--font-display);
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--cyan);
+  text-align: center;
+  white-space: nowrap;
+}
+.compare-row .cv {
+  font-family: var(--font-display);
+  font-size: var(--fs-num);
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+}
+.compare-row .cv.you {
+  text-align: right;
+}
+.compare-row .cv.foe {
+  text-align: left;
+}
+.compare-row .cv.hp {
+  color: var(--red);
+}
+.compare-row .cv .left {
+  color: var(--green);
+}
+
 /* dice tray + assignment slots */
 .dice-tray {
   display: flex;
@@ -853,11 +934,14 @@ html[data-skin='modern'] .die.d12 {
   gap: calc(14px * var(--sp));
 }
 
-/* Carousel position dots — hidden unless the mobile carousel is active. */
-.carousel-dots {
+/* Carousel position dots — hidden unless a mobile carousel is active.
+   .carousel-dots = class-select cards; .side-dots = in-game side-panel carousel. */
+.carousel-dots,
+.side-dots {
   display: none;
 }
-.carousel-dots .dot {
+.carousel-dots .dot,
+.side-dots .dot {
   width: 10px;
   height: 10px;
   padding: 0;
@@ -867,7 +951,8 @@ html[data-skin='modern'] .die.d12 {
   clip-path: none;
   transition: width 0.15s ease, background 0.15s ease;
 }
-.carousel-dots .dot.active {
+.carousel-dots .dot.active,
+.side-dots .dot.active {
   width: 22px;
   background: var(--gold);
   border-color: var(--gold);
@@ -1652,28 +1737,72 @@ body {
   }
 
   /* Promote the turn controls directly under the board. .side-col children keep
-     their JSX order: 1 = StatPanel, 2 = EnemyStatPanel, 3 = TurnPanel, 4 = Log. */
+     their JSX order: 1 = ComparisonPanel, 2 = TurnPanel, 3 = Log. */
   .side-col {
     gap: calc(12px * var(--sp));
   }
-  .side-col > :nth-child(3) {
+  .side-col > :nth-child(2) {
     order: 0;
   } /* TurnPanel — the primary action surface, first */
   .side-col > :nth-child(1) {
     order: 1;
-  } /* hero stats */
-  .side-col > :nth-child(2) {
+  } /* hero vs monster comparison */
+  .side-col > :nth-child(3) {
     order: 2;
-  } /* enemy stats */
-  .side-col > :nth-child(4) {
-    order: 3;
   } /* action log, last */
-  .side-col > :nth-child(3) .primary {
+  .side-col > :nth-child(2) .primary {
     width: 100%;
   }
 
   .log {
     height: 96px;
+  }
+
+  /* ---- carousel layout (Settings → Mobile layout = Carousel) ----
+     Lay the side panels out as a horizontal scroll-snap track — one full-width
+     card at a time (turn controls, then the stat comparison, then the log) — so
+     the lower half of the screen needs no vertical scrolling. The position dots
+     below it become visible and track the active card. */
+  html[data-layout='carousel'] .side-col {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: start;
+    min-width: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  html[data-layout='carousel'] .side-col::-webkit-scrollbar {
+    display: none;
+  }
+  html[data-layout='carousel'] .side-col > .panel {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: center;
+  }
+  html[data-layout='carousel'] .side-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* ---- vertical compaction: fit the board + turn controls + the hero/enemy
+          reference stats on one screen so a turn needs no scrolling ---- */
+  .app {
+    gap: calc(8px * var(--sp));
+  }
+  .panel {
+    padding: calc(10px * var(--sp));
+    gap: calc(8px * var(--sp));
+  }
+  .panel h3 {
+    padding-bottom: calc(5px * var(--sp));
+  }
+  /* assignment slots two-up to halve the turn panel's height */
+  .slots {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   /* ---- touch targets (never floor the board .tile <button>s — a min-height on
@@ -1705,7 +1834,6 @@ body {
     min-height: 56px;
   }
   .slots {
-    grid-template-columns: 1fr;
     gap: calc(8px * var(--sp));
   }
   .slot {
