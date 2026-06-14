@@ -90,6 +90,27 @@ export function SettingsDrawer({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
+          <h3>{t.settings.expansion}</h3>
+          <div className="row" style={{ marginTop: 8 }}>
+            <button
+              className={settings.treasureChests ? 'primary' : ''}
+              onClick={() => dispatch({ type: 'SET_TREASURE', enabled: true })}
+            >
+              {t.settings.expansionOn}
+            </button>
+            <button
+              className={!settings.treasureChests ? 'primary' : ''}
+              onClick={() => dispatch({ type: 'SET_TREASURE', enabled: false })}
+            >
+              {t.settings.expansionOff}
+            </button>
+          </div>
+          <p className="hint" style={{ marginTop: 8 }}>
+            {t.settings.expansionHint}
+          </p>
+        </div>
+
+        <div>
           <h3>{t.settings.appearance}</h3>
           {APPEARANCE.filter((tweak) => !(tweak.retroOnly && tweaks.skin === 'modern')).map((tweak) => {
             const optionLabels = t.appearance.options[tweak.axis] as Record<string, string>

@@ -5,13 +5,13 @@ import type { Coord, GameState, Monster } from '../types'
 import { coordEq, keyToCoord } from '../grid'
 import { costField, pathCost } from '../pathfinding'
 import { hasLineOfSight } from '../los'
-import { isWall } from '../board'
+import { blocksMove } from '../board'
 
 export type PositionMap = Map<number, Coord>
 
-/** Movement-point distance from a tile to the hero (walls block; units are transparent). */
+/** Movement-point distance from a tile to the hero (walls/chests block; units are transparent). */
 export function rangeToHero(state: GameState, from: Coord): number | null {
-  return pathCost(from, state.hero.pos, (c) => !isWall(state, c))
+  return pathCost(from, state.hero.pos, (c) => !blocksMove(state, c))
 }
 
 /** Line of sight from a tile to the hero, with other monsters (at their planned
@@ -23,6 +23,7 @@ export function losToHero(
   selfId: number,
 ): boolean {
   const blockers: Coord[] = [...state.walls]
+  if (state.chest && !state.chest.opened) blockers.push(state.chest.pos)
   for (const m of state.monsters) {
     if (m.id === selfId) continue
     blockers.push(positions.get(m.id) ?? m.pos)
@@ -42,13 +43,13 @@ export interface Stop {
  */
 export function reachableStops(state: GameState, m: Monster, positions: PositionMap): Stop[] {
   const self = positions.get(m.id) ?? m.pos
-  const traverse = (c: Coord) => !isWall(state, c) && !coordEq(c, state.hero.pos)
+  const traverse = (c: Coord) => !blocksMove(state, c) && !coordEq(c, state.hero.pos)
   const field = costField(self, traverse)
   const stops: Stop[] = []
   for (const [k, cost] of field) {
     if (cost > m.speed) continue
     const c = keyToCoord(k)
-    if (isWall(state, c) || coordEq(c, state.hero.pos)) continue
+    if (blocksMove(state, c) || coordEq(c, state.hero.pos)) continue
     let occupied = false
     for (const other of state.monsters) {
       if (other.id === m.id) continue

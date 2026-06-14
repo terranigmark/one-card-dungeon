@@ -11,7 +11,7 @@ export interface GameStore {
 
 function freshSettings(): Settings {
   // A fresh seed per session; gameplay is otherwise fully deterministic.
-  return { difficulty: 'faithful', seed: (Math.random() * 0x7fffffff) | 0 }
+  return { difficulty: 'faithful', seed: (Math.random() * 0x7fffffff) | 0, treasureChests: true }
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({

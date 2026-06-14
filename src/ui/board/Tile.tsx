@@ -7,12 +7,13 @@ interface TileProps {
   hero: boolean
   heroHealth: number
   monster?: { health: number; kind: MonsterKind }
+  chest?: { value: number; title: string }
   highlight: 'move' | 'attack' | null
   onClick: () => void
   interactive: boolean
 }
 
-export function Tile({ wall, hero, heroHealth, monster, highlight, onClick, interactive }: TileProps) {
+export function Tile({ wall, hero, heroHealth, monster, chest, highlight, onClick, interactive }: TileProps) {
   const cls = [
     'tile',
     wall ? 'wall' : '',
@@ -35,6 +36,7 @@ export function Tile({ wall, hero, heroHealth, monster, highlight, onClick, inte
           title={`${monster.kind} — ${monster.health} HP`}
         />
       )}
+      {chest && <Die value={chest.value} color="yellow" badge="🧰" title={chest.title} />}
     </button>
   )
 }

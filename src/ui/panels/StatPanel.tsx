@@ -2,7 +2,7 @@ import { useGameState } from '../../state/hooks'
 import { useT } from '../../i18n'
 
 export function StatPanel() {
-  const { hero, turn, phase } = useGameState()
+  const { hero, turn, phase, chest } = useGameState()
   const t = useT()
   const className =
     hero.classId && hero.classId !== 'none' ? t.classes[hero.classId].name : t.adventurer
@@ -49,6 +49,12 @@ export function StatPanel() {
           <span className="label">{t.stats.defense}</span>
           <span className="value">{turn ? turn.totals.defense : hero.base.defense}</span>
         </div>
+        {chest && chest.opened && chest.remaining > 0 && (
+          <div className="stat">
+            <span className="label">🧰 {t.stats.loot}</span>
+            <span className="value">{chest.remaining}</span>
+          </div>
+        )}
       </div>
       {phase === 'Adventurer' && <p className="hint">{t.statPanel.hint}</p>}
     </div>

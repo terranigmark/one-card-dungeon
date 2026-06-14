@@ -1,6 +1,7 @@
 import type { Action } from './actions'
 import type {
   AssignSlot,
+  ChestState,
   ClassState,
   EnergyDice,
   GameState,
@@ -9,8 +10,8 @@ import type {
   Monster,
   Settings,
 } from './types'
-import { LEVELS, TOTAL_LEVELS } from './levels'
-import { rollDice } from './rng'
+import { chestTileFor, LEVELS, TOTAL_LEVELS } from './levels'
+import { rollDice, rollDie } from './rng'
 import { attackCostPerHit, computeTotals, damageToHero } from './rules'
 import { coordEq } from './grid'
 import { pathCost } from './pathfinding'
@@ -22,13 +23,14 @@ import {
   monsterAt,
   monsterCanHitHero,
   rangeTraverse,
+  unopenedChestAt,
 } from './board'
 import { getStrategy } from './ai'
 
 const HERO_BASE = { speed: 1, attack: 1, defense: 1, range: 2 }
 
 function emptyEnergy(): EnergyDice {
-  return { rolled: [], assignment: {}, rangerUnlocked: false }
+  return { rolled: [], assignment: {}, secondary: {}, rangerUnlocked: false, knightUnlocked: false, clericBoosted: false }
 }
 
 function freshClassState(): ClassState {
@@ -50,6 +52,17 @@ export function createInitialState(settings: Settings): GameState {
     log: [],
     rngState: settings.seed | 0,
     paladinPending: null,
+    chest: null,
+    chestSpend: null,
+  }
+}
+
+/** Roll and place the level's Treasure Chest, threading the PRNG cursor. */
+function rollChest(cfg: (typeof LEVELS)[number], rngState: number): { chest: ChestState; rngState: number } {
+  const r = rollDie(rngState)
+  return {
+    chest: { pos: chestTileFor(cfg), value: r.value, opened: false, remaining: r.value },
+    rngState: r.state,
   }
 }
 
@@ -66,6 +79,18 @@ function loadLevel(state: GameState, idx: number): GameState {
     range: cfg.monster.range,
     kind: cfg.monsterKind,
   }))
+  let rngState = state.rngState
+  let chest: ChestState | null = null
+  const log: LogEntry[] = [
+    ...state.log,
+    { t: 'levelStart', level: cfg.level, count: monsters.length, kind: cfg.monsterKind },
+  ]
+  if (state.settings.treasureChests) {
+    const rolled = rollChest(cfg, rngState)
+    chest = rolled.chest
+    rngState = rolled.rngState
+    log.push({ t: 'chestAppears', value: chest.value })
+  }
   return {
     ...state,
     levelIndex: idx,
@@ -77,8 +102,11 @@ function loadLevel(state: GameState, idx: number): GameState {
     turnCount: 0,
     classState: freshClassState(),
     paladinPending: null,
+    chest,
+    chestSpend: null,
+    rngState,
     phase: 'Energy',
-    log: [...state.log, { t: 'levelStart', level: cfg.level, count: monsters.length, kind: cfg.monsterKind }],
+    log,
   }
 }
 
@@ -87,6 +115,7 @@ function startNextTurn(state: GameState): GameState {
     ...state,
     turn: null,
     energy: emptyEnergy(),
+    chestSpend: null,
     classState: { ...state.classState, usedThisTurn: false },
     turnCount: state.turnCount + 1,
     phase: 'Energy',
@@ -95,7 +124,7 @@ function startNextTurn(state: GameState): GameState {
 
 function diceAllAssigned(e: EnergyDice): boolean {
   if (e.rolled.length === 0) return false
-  const used = new Set(Object.values(e.assignment))
+  const used = new Set([...Object.values(e.assignment), ...Object.values(e.secondary ?? {})])
   if (used.size !== e.rolled.length) return false
   for (let i = 0; i < e.rolled.length; i++) if (!used.has(i)) return false
   return true
@@ -127,7 +156,14 @@ export function gameReducer(state: GameState, action: Action): GameState {
           ...state,
           rngState: r.state,
           paladinPending: null,
-          energy: { rolled, assignment: {}, rangerUnlocked: state.energy.rangerUnlocked },
+          energy: {
+            rolled,
+            assignment: {},
+            secondary: {},
+            rangerUnlocked: state.energy.rangerUnlocked,
+            knightUnlocked: state.energy.knightUnlocked,
+            clericBoosted: false,
+          },
         },
         { t: 'rolled', dice: rolled },
       )
@@ -139,38 +175,71 @@ export function gameReducer(state: GameState, action: Action): GameState {
       if (dieIndex < 0 || dieIndex >= state.energy.rolled.length) return state
       if (slot === 'range' && !state.energy.rangerUnlocked) return state
       const assignment = { ...state.energy.assignment }
+      const secondary = { ...(state.energy.secondary ?? {}) }
+      // Detach this die from wherever it currently sits (primary or secondary).
       for (const k of Object.keys(assignment) as AssignSlot[]) {
         if (assignment[k] === dieIndex) delete assignment[k]
       }
-      assignment[slot] = dieIndex
-      return { ...state, energy: { ...state.energy, assignment } }
+      for (const k of Object.keys(secondary) as AssignSlot[]) {
+        if (secondary[k] === dieIndex) delete secondary[k]
+      }
+      if (assignment[slot] === undefined) {
+        assignment[slot] = dieIndex
+      } else if (state.energy.knightUnlocked && Object.keys(secondary).length === 0) {
+        // Knight: stack a second die onto this skill (only one slot may double).
+        secondary[slot] = dieIndex
+      } else {
+        assignment[slot] = dieIndex
+      }
+      return { ...state, energy: { ...state.energy, assignment, secondary } }
     }
 
     case 'UNASSIGN_DIE': {
       if (state.phase !== 'Energy') return state
       const assignment = { ...state.energy.assignment }
+      const secondary = { ...(state.energy.secondary ?? {}) }
       delete assignment[action.slot]
-      return { ...state, energy: { ...state.energy, assignment } }
+      delete secondary[action.slot]
+      return { ...state, energy: { ...state.energy, assignment, secondary } }
     }
 
     case 'CONFIRM_ENERGY': {
       if (state.phase !== 'Energy') return state
       if (!diceAllAssigned(state.energy)) return state
-      const totals = computeTotals(state.hero.base, state.energy)
-      return withLog(
-        {
-          ...state,
-          turn: { totals, speedLeft: totals.speed, attackLeft: totals.attack },
-          phase: 'Adventurer',
-        },
-        { t: 'turnTotals', speed: totals.speed, attack: totals.attack, defense: totals.defense, range: totals.range },
-      )
+      // Only spend chest loot the player actually still has.
+      const spend =
+        state.chestSpend && state.chest && state.chest.opened && state.chestSpend.amount > 0
+          ? { slot: state.chestSpend.slot, amount: Math.min(state.chestSpend.amount, state.chest.remaining) }
+          : null
+      const totals = computeTotals(state.hero.base, state.energy, spend)
+      const chest =
+        spend && state.chest ? { ...state.chest, remaining: state.chest.remaining - spend.amount } : state.chest
+      let next: GameState = {
+        ...state,
+        turn: { totals, speedLeft: totals.speed, attackLeft: totals.attack },
+        chest,
+        chestSpend: null,
+        phase: 'Adventurer',
+      }
+      next = withLog(next, {
+        t: 'turnTotals',
+        speed: totals.speed,
+        attack: totals.attack,
+        defense: totals.defense,
+        range: totals.range,
+      })
+      if (spend && chest) {
+        next = withLog(next, { t: 'chestSpend', slot: spend.slot, amount: spend.amount, remaining: chest.remaining })
+      }
+      return next
     }
 
     case 'MOVE_HERO': {
       if (state.phase !== 'Adventurer' || !state.turn) return state
       const to = action.to
-      if (isWall(state, to) || monsterAt(state, to) || coordEq(state.hero.pos, to)) return state
+      if (isWall(state, to) || unopenedChestAt(state, to) || monsterAt(state, to) || coordEq(state.hero.pos, to)) {
+        return state
+      }
       const cost = pathCost(state.hero.pos, to, heroTraverse(state))
       if (cost === null || cost > state.turn.speedLeft) return state
       return withLog(
@@ -212,6 +281,33 @@ export function gameReducer(state: GameState, action: Action): GameState {
         return withLog({ ...base, phase: 'EndOfLevel' }, { t: 'levelCleared' })
       }
       return base
+    }
+
+    case 'OPEN_CHEST': {
+      if (state.phase !== 'Adventurer' || !state.turn) return state
+      const chest = state.chest
+      if (!chest || chest.opened) return state
+      // Open it "as you would attack a monster": within Range + Line of Sight,
+      // spending Attack points equal to its value.
+      const r = pathCost(state.hero.pos, chest.pos, rangeTraverse(state))
+      if (r === null || r > state.turn.totals.range) return state
+      if (!hasLineOfSight(state.hero.pos, chest.pos, losBlockers(state))) return state
+      if (state.turn.attackLeft < chest.value) return state
+      return withLog(
+        {
+          ...state,
+          chest: { ...chest, opened: true, remaining: chest.value },
+          turn: { ...state.turn, attackLeft: state.turn.attackLeft - chest.value },
+        },
+        { t: 'chestOpened', value: chest.value },
+      )
+    }
+
+    case 'SET_CHEST_SPEND': {
+      if (state.phase !== 'Energy') return state
+      if (!state.chest || !state.chest.opened) return state
+      const amount = Math.max(0, Math.min(action.amount, state.chest.remaining))
+      return { ...state, chestSpend: amount === 0 ? null : { slot: action.slot, amount } }
     }
 
     case 'END_ADVENTURER': {
@@ -269,7 +365,14 @@ export function gameReducer(state: GameState, action: Action): GameState {
         {
           ...state,
           rngState: r.state,
-          energy: { rolled: r.value, assignment: {}, rangerUnlocked: state.energy.rangerUnlocked },
+          energy: {
+            rolled: r.value,
+            assignment: {},
+            secondary: {},
+            rangerUnlocked: state.energy.rangerUnlocked,
+            knightUnlocked: state.energy.knightUnlocked,
+            clericBoosted: false,
+          },
           classState: { ...state.classState, usedThisLevel: true },
         },
         { t: 'wizardReroll', dice: r.value },
@@ -286,7 +389,14 @@ export function gameReducer(state: GameState, action: Action): GameState {
         {
           ...state,
           rngState: r.state,
-          energy: { rolled: r.value, assignment: {}, rangerUnlocked: state.energy.rangerUnlocked },
+          energy: {
+            rolled: r.value,
+            assignment: {},
+            secondary: {},
+            rangerUnlocked: state.energy.rangerUnlocked,
+            knightUnlocked: state.energy.knightUnlocked,
+            clericBoosted: false,
+          },
           classState: { ...state.classState, usedThisTurn: true },
         },
         { t: 'barbarianReroll', dice: r.value },
@@ -321,8 +431,85 @@ export function gameReducer(state: GameState, action: Action): GameState {
       )
     }
 
+    case 'ABILITY_NECROMANCER_SMITE': {
+      if (state.phase !== 'Adventurer' || !state.turn) return state
+      if (state.hero.classId !== 'necromancer' || state.classState.usedThisLevel) return state
+      // "Lose 1 Life to inflict 1 Damage to an enemy within range" — never
+      // self-destruct, so this needs at least 2 Health.
+      if (state.hero.health < 2) return state
+      const m = state.monsters.find((x) => x.id === action.targetId)
+      if (!m) return state
+      const r = pathCost(state.hero.pos, m.pos, rangeTraverse(state))
+      if (r === null || r > state.turn.totals.range) return state
+      if (!hasLineOfSight(state.hero.pos, m.pos, losBlockers(state))) return state
+
+      const newHealth = m.health - 1
+      const killed = newHealth <= 0
+      const monsters = killed
+        ? state.monsters.filter((x) => x.id !== m.id)
+        : state.monsters.map((x) => (x.id === m.id ? { ...x, health: newHealth } : x))
+      const base = withLog(
+        {
+          ...state,
+          hero: { ...state.hero, health: state.hero.health - 1 },
+          monsters,
+          classState: { ...state.classState, usedThisLevel: true },
+        },
+        { t: 'necroSmite', kind: m.kind, id: m.id, killed },
+      )
+      if (monsters.length === 0) {
+        if (state.levelIndex === TOTAL_LEVELS - 1) return withLog({ ...base, phase: 'Won' }, { t: 'won' })
+        return withLog({ ...base, phase: 'EndOfLevel' }, { t: 'levelCleared' })
+      }
+      return base
+    }
+
+    case 'ABILITY_CLERIC_BLESS': {
+      if (state.phase !== 'Energy' || state.hero.classId !== 'cleric') return state
+      const { rolled } = state.energy
+      if (rolled.length !== 3 || state.energy.clericBoosted) return state
+      if (!(rolled[0] === rolled[1] && rolled[1] === rolled[2])) return state
+      const boosted = rolled.map((v) => Math.min(6, v + 2)) as typeof rolled
+      return withLog(
+        { ...state, energy: { ...state.energy, rolled: boosted, clericBoosted: true } },
+        { t: 'clericBless', dice: boosted },
+      )
+    }
+
+    case 'ABILITY_KNIGHT_DOUBLE': {
+      if (state.phase !== 'Energy' || state.hero.classId !== 'knight') return state
+      if (state.classState.usedThisLevel || state.energy.rolled.length === 0 || state.energy.knightUnlocked) {
+        return state
+      }
+      return withLog(
+        {
+          ...state,
+          energy: { ...state.energy, knightUnlocked: true },
+          classState: { ...state.classState, usedThisLevel: true },
+        },
+        { t: 'knightDouble' },
+      )
+    }
+
+    case 'ABILITY_ROGUE_BOOST': {
+      if (state.phase !== 'Energy' || state.hero.classId !== 'rogue') return state
+      if (state.classState.usedThisLevel || state.energy.rolled.length === 0) return state
+      const boosted = state.energy.rolled.map((v) => Math.min(6, v + 1)) as typeof state.energy.rolled
+      return withLog(
+        {
+          ...state,
+          energy: { ...state.energy, rolled: boosted },
+          classState: { ...state.classState, usedThisLevel: true },
+        },
+        { t: 'rogueBoost', dice: boosted },
+      )
+    }
+
     case 'SET_DIFFICULTY':
       return { ...state, settings: { ...state.settings, difficulty: action.difficulty } }
+
+    case 'SET_TREASURE':
+      return { ...state, settings: { ...state.settings, treasureChests: action.enabled } }
 
     case 'RESTART':
       return createInitialState(state.settings)

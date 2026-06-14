@@ -17,7 +17,17 @@ export type Skill = 'speed' | 'attack' | 'defense' | 'range'
  */
 export type AssignSlot = 'speed' | 'attack' | 'defense' | 'range'
 
-export type ClassId = 'paladin' | 'barbarian' | 'ranger' | 'wizard' | 'none'
+export type ClassId =
+  | 'paladin'
+  | 'barbarian'
+  | 'ranger'
+  | 'wizard'
+  // M'Guf-yn Returns expansion classes
+  | 'necromancer'
+  | 'cleric'
+  | 'knight'
+  | 'rogue'
+  | 'none'
 export type MonsterKind = 'spider' | 'orc' | 'skeleton' | 'demon'
 export type Difficulty = 'faithful' | 'aggressive'
 
@@ -70,8 +80,37 @@ export interface EnergyDice {
   rolled: DieFace[] // empty before the roll, otherwise exactly 3 values
   /** Maps an assignment slot to an index (0..2) into `rolled`. */
   assignment: Partial<Record<AssignSlot, number>>
+  /**
+   * Knight ability: a second die stacked onto one skill this turn. At most one
+   * entry ever — the expansion lets you double up a single skill, once per level.
+   */
+  secondary?: Partial<Record<AssignSlot, number>>
   /** Ranger ability: the Range slot is assignable this turn. */
   rangerUnlocked: boolean
+  /** Knight ability: a slot may hold a second die this turn. */
+  knightUnlocked?: boolean
+  /** Cleric ability: the +2 triples bonus has already been applied to this roll. */
+  clericBoosted?: boolean
+}
+
+/**
+ * Treasure Chest (M'Guf-yn Returns). A yellow die placed on the exit stairs at
+ * the start of each level. Its face is both its Defense (the Attack needed to
+ * open it) and its Loot — bonus energy points you can pour into a single skill
+ * per turn after opening. Unopened, it blocks movement and line of sight like a
+ * wall. Discarded (unspent points lost) when the level is cleared.
+ */
+export interface ChestState {
+  pos: Coord
+  value: DieFace // Defense to open === Loot points granted
+  opened: boolean
+  remaining: number // unspent loot points (only meaningful once opened)
+}
+
+/** A planned allocation of chest loot for the current turn (one skill only). */
+export interface ChestSpend {
+  slot: Skill
+  amount: number
 }
 
 export interface SkillTotals {
@@ -96,6 +135,8 @@ export interface ClassState {
 export interface Settings {
   difficulty: Difficulty
   seed: number
+  /** M'Guf-yn Returns: place a Treasure Chest on each level. */
+  treasureChests: boolean
 }
 
 export interface LevelConfig {
@@ -133,6 +174,14 @@ export type LogEntry =
   | { t: 'paladinKeep'; value: number }
   | { t: 'healed'; health: number }
   | { t: 'upgraded'; skill: Skill; value: number }
+  // M'Guf-yn Returns expansion
+  | { t: 'chestAppears'; value: number }
+  | { t: 'chestOpened'; value: number }
+  | { t: 'chestSpend'; slot: Skill; amount: number; remaining: number }
+  | { t: 'necroSmite'; kind: MonsterKind; id: number; killed: boolean }
+  | { t: 'clericBless'; dice: number[] }
+  | { t: 'knightDouble' }
+  | { t: 'rogueBoost'; dice: number[] }
 
 export interface GameState {
   phase: Phase
@@ -149,4 +198,8 @@ export interface GameState {
   rngState: number // serializable PRNG cursor
   /** Paladin: a die value carried into next turn's roll (consumed on roll). */
   paladinPending: DieFace | null
+  /** M'Guf-yn Returns: the current level's Treasure Chest, if any. */
+  chest: ChestState | null
+  /** Treasure loot planned for this turn (folded into totals on confirm). */
+  chestSpend: ChestSpend | null
 }

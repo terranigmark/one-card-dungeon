@@ -35,6 +35,20 @@ export function attackableTargets(state: GameState): TargetInfo[] {
   return out
 }
 
+/**
+ * Whether the level's Treasure Chest can be opened right now: within Range and
+ * Line of Sight, with enough Attack points left to match its value.
+ */
+export function chestOpenable(state: GameState): boolean {
+  const t = state.turn
+  const chest = state.chest
+  if (!t || !chest || chest.opened) return false
+  const r = pathCost(state.hero.pos, chest.pos, rangeTraverse(state))
+  if (r === null || r > t.totals.range) return false
+  if (!hasLineOfSight(state.hero.pos, chest.pos, losBlockers(state))) return false
+  return t.attackLeft >= chest.value
+}
+
 /** Movement cost to a specific tile, or null if it isn't a legal move this turn. */
 export function moveCostTo(state: GameState, to: Coord): number | null {
   if (!state.turn) return null

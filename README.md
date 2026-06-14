@@ -42,6 +42,26 @@ Paladin (keep a die for next turn), Barbarian (reroll all dice at 1 HP), Ranger 
 Range), Wizard (reroll all energy dice). Pick one on the start screen; use the ability button in
 the Energy phase.
 
+The **M'Guf-yn Returns** expansion adds four more, also chosen on the start screen:
+- **Necromancer** – once per level, lose 1 Health to deal 1 damage to an enemy in Range + Line of
+  Sight (use the *Smite* buttons in the Adventurer phase).
+- **Cleric** – when you roll triples (e.g. `3-3-3`), bless them to raise each die by 2 (max 6).
+- **Knight** – once per level, stack two energy dice onto a single skill (unlock it, then assign
+  two dice to the same slot).
+- **Rogue** – once per level, raise every die you rolled by 1 (max 6).
+
+### Treasure Chests (expansion · Settings ⚙)
+With **Treasure Chests** enabled, every level spawns a yellow chest die on the exit stairs opposite
+your start. Its face is both its Defense (the Attack needed to open it) and its Loot. Until opened
+it blocks movement and line of sight like a wall. Open it in the Adventurer phase like attacking a
+monster (within Range + Line of Sight, spending Attack equal to its value). Once opened, its value
+becomes a pool of **loot points** you can pour into a single skill per turn (Speed, Attack, Defense
+or Range) during the Energy phase — split across turns if you like, but only one skill per turn.
+Unspent loot is lost when the level is cleared, and a fresh chest is rolled for the next level.
+
+> The expansion's **Boss Dungeon Card** (the D12 commanders at the end of levels 3/6/9/12) is not
+> implemented yet — it depends on the new boss monsters, which are coming next.
+
 ### Language (Settings ⚙)
 The whole interface is available in **English** and **Spanish**. The picker sits at the top of the
 settings drawer; the choice is saved to `localStorage` (`ocd:lang`) across games. With no saved
