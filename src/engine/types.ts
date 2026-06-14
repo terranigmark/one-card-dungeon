@@ -28,11 +28,22 @@ export type ClassId =
   | 'knight'
   | 'rogue'
   | 'none'
-export type MonsterKind = 'spider' | 'orc' | 'skeleton' | 'demon'
+export type MonsterKind =
+  | 'spider'
+  | 'orc'
+  | 'skeleton'
+  | 'demon'
+  // M'Guf-yn Returns expansion bosses (one per boss level: 3 / 6 / 9 / 12).
+  // These have more than 6 Health, so they are shown on a 12-sided die.
+  | 'lizardTroll'
+  | 'skeletonWarrior'
+  | 'giantMantis'
+  | 'mgufyn'
 export type Difficulty = 'faithful' | 'aggressive'
 
 export type Phase =
   | 'ClassSelect'
+  | 'BossChoice' // M'Guf-yn Returns: opt in/out of a boss level (3/6/9/12)
   | 'Energy' // awaiting roll + assignment
   | 'Adventurer' // spending Speed/Attack pools
   | 'MonsterMove'
@@ -135,6 +146,12 @@ export interface ClassState {
 export interface Settings {
   difficulty: Difficulty
   seed: number
+  /**
+   * M'Guf-yn Returns master switch, chosen on the start screen. When off, the
+   * game is the classic campaign: no expansion classes, no Treasure Chests and
+   * no boss levels. Optional so older saves / tests behave as "enabled".
+   */
+  expansion?: boolean
   /** M'Guf-yn Returns: place a Treasure Chest on each level. */
   treasureChests: boolean
 }
@@ -148,6 +165,16 @@ export interface LevelConfig {
   monsterSpawns: Coord[]
   monster: MonsterStats // template instantiated at each spawn
   monsterKind: MonsterKind
+  /**
+   * M'Guf-yn Returns boss arenas shrink the grid by removing the (0,0) and (4,4)
+   * corners. These "void" tiles are off the board: nothing occupies them and they
+   * block movement and line of sight like a wall, but render as empty holes.
+   */
+  voids?: Coord[]
+  /** True for the boss variant of a level (drives the D12 illustration etc.). */
+  isBoss?: boolean
+  /** Boss-arena board tint, matching the printed card ('red' lava vs 'blue'). */
+  palette?: 'red' | 'blue'
 }
 
 /**
@@ -182,6 +209,8 @@ export type LogEntry =
   | { t: 'clericBless'; dice: number[] }
   | { t: 'knightDouble' }
   | { t: 'rogueBoost'; dice: number[] }
+  | { t: 'bossEntered'; kind: MonsterKind }
+  | { t: 'bossSkipped' }
 
 export interface GameState {
   phase: Phase
@@ -189,6 +218,8 @@ export interface GameState {
   hero: Hero
   monsters: Monster[]
   walls: Coord[]
+  /** M'Guf-yn Returns: tiles removed from a boss arena (the (0,0)/(4,4) corners). */
+  voids: Coord[]
   energy: EnergyDice
   turn: TurnState | null
   classState: ClassState
@@ -202,4 +233,10 @@ export interface GameState {
   chest: ChestState | null
   /** Treasure loot planned for this turn (folded into totals on confirm). */
   chestSpend: ChestSpend | null
+  /**
+   * M'Guf-yn Returns: during the BossChoice phase, the level index the hero is
+   * about to enter. The player decides whether to face the boss or take the
+   * regular path; null at all other times.
+   */
+  bossPending: number | null
 }

@@ -5,6 +5,8 @@ interface DieProps {
   color: DieColor
   /** Show pips (for 1-6) instead of a number. Defaults on for black/white dice. */
   pips?: boolean
+  /** Draw as a 12-sided die (dodecagon, always numeric) — used for bosses. */
+  d12?: boolean
   badge?: string
   selected?: boolean
   onClick?: () => void
@@ -21,11 +23,13 @@ const PIP_LAYOUT: Record<number, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 }
 
-export function Die({ value, color, pips, badge, selected, onClick, title }: DieProps) {
-  const usePips = (pips ?? (color === 'black' || color === 'white')) && value >= 1 && value <= 6
+export function Die({ value, color, pips, d12, badge, selected, onClick, title }: DieProps) {
+  // A D12 is always numeric — its faces go past the pip layouts (and past 6).
+  const usePips = !d12 && (pips ?? (color === 'black' || color === 'white')) && value >= 1 && value <= 6
   const cls = [
     'die',
     color,
+    d12 ? 'd12' : '',
     usePips ? 'pips' : '',
     onClick ? 'selectable' : '',
     selected ? 'selected' : '',

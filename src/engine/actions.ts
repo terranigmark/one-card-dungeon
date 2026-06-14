@@ -23,6 +23,8 @@ export type Action =
   | { type: 'RESOLVE_MONSTER_ATTACK' }
   // end of level
   | { type: 'CHOOSE_REWARD'; reward: Reward }
+  // boss levels (M'Guf-yn Returns): opt into or skip the boss arena
+  | { type: 'RESOLVE_BOSS_CHOICE'; boss: boolean }
   // class abilities
   | { type: 'ABILITY_PALADIN_KEEP'; dieIndex: number }
   | { type: 'ABILITY_BARBARIAN_REROLL' }
@@ -36,4 +38,5 @@ export type Action =
   // meta
   | { type: 'SET_DIFFICULTY'; difficulty: Difficulty }
   | { type: 'SET_TREASURE'; enabled: boolean }
+  | { type: 'SET_EXPANSION'; enabled: boolean }
   | { type: 'RESTART' }

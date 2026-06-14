@@ -10,7 +10,7 @@ import type {
   Monster,
   Settings,
 } from './types'
-import { chestTileFor, LEVELS, TOTAL_LEVELS } from './levels'
+import { BOSS_LEVELS, chestTileFor, isBossLevelIndex, LEVELS, TOTAL_LEVELS } from './levels'
 import { rollDice, rollDie } from './rng'
 import { attackCostPerHit, computeTotals, damageToHero } from './rules'
 import { coordEq } from './grid'
@@ -44,6 +44,7 @@ export function createInitialState(settings: Settings): GameState {
     hero: { pos: { x: 0, y: 0 }, health: 6, maxHealth: 6, base: { ...HERO_BASE }, classId: null },
     monsters: [],
     walls: [],
+    voids: [],
     energy: emptyEnergy(),
     turn: null,
     classState: freshClassState(),
@@ -54,7 +55,16 @@ export function createInitialState(settings: Settings): GameState {
     paladinPending: null,
     chest: null,
     chestSpend: null,
+    bossPending: null,
   }
+}
+
+/** Class ids unlocked only by the M'Guf-yn Returns expansion. */
+const EXPANSION_CLASSES = new Set(['necromancer', 'cleric', 'knight', 'rogue'])
+
+/** Whether the expansion is active for this game (defaults to "on" when unset). */
+function expansionOn(state: GameState): boolean {
+  return state.settings.expansion ?? true
 }
 
 /** Roll and place the level's Treasure Chest, threading the PRNG cursor. */
@@ -66,8 +76,8 @@ function rollChest(cfg: (typeof LEVELS)[number], rngState: number): { chest: Che
   }
 }
 
-function loadLevel(state: GameState, idx: number): GameState {
-  const cfg = LEVELS[idx]
+function loadLevel(state: GameState, idx: number, useBoss = false): GameState {
+  const cfg = useBoss && BOSS_LEVELS[idx + 1] ? BOSS_LEVELS[idx + 1] : LEVELS[idx]
   const monsters: Monster[] = cfg.monsterSpawns.map((pos, i) => ({
     id: i + 1,
     pos: { ...pos },
@@ -85,7 +95,8 @@ function loadLevel(state: GameState, idx: number): GameState {
     ...state.log,
     { t: 'levelStart', level: cfg.level, count: monsters.length, kind: cfg.monsterKind },
   ]
-  if (state.settings.treasureChests) {
+  if (cfg.isBoss) log.push({ t: 'bossEntered', kind: cfg.monsterKind })
+  if (expansionOn(state) && state.settings.treasureChests) {
     const rolled = rollChest(cfg, rngState)
     chest = rolled.chest
     rngState = rolled.rngState
@@ -95,6 +106,7 @@ function loadLevel(state: GameState, idx: number): GameState {
     ...state,
     levelIndex: idx,
     walls: cfg.walls.map((c) => ({ ...c })),
+    voids: (cfg.voids ?? []).map((c) => ({ ...c })),
     monsters,
     hero: { ...state.hero, pos: { ...cfg.heroStart } },
     energy: emptyEnergy(),
@@ -104,10 +116,23 @@ function loadLevel(state: GameState, idx: number): GameState {
     paladinPending: null,
     chest,
     chestSpend: null,
+    bossPending: null,
     rngState,
     phase: 'Energy',
     log,
   }
+}
+
+/**
+ * Advance to level `idx`. On expansion boss levels (3/6/9/12) the player first
+ * chooses whether to face the boss, so we pause in the BossChoice phase instead
+ * of loading immediately.
+ */
+function advanceTo(state: GameState, idx: number): GameState {
+  if (expansionOn(state) && isBossLevelIndex(idx) && BOSS_LEVELS[idx + 1]) {
+    return { ...state, phase: 'BossChoice', bossPending: idx }
+  }
+  return loadLevel(state, idx)
 }
 
 function startNextTurn(state: GameState): GameState {
@@ -143,7 +168,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
 
     case 'START_GAME': {
       if (state.phase !== 'ClassSelect' || !state.hero.classId) return state
-      return loadLevel(state, 0)
+      return advanceTo(state, 0)
     }
 
     case 'ROLL_ENERGY': {
@@ -354,7 +379,14 @@ export function gameReducer(state: GameState, action: Action): GameState {
         }
         entry = { t: 'upgraded', skill: reward.skill, value: hero.base[reward.skill] }
       }
-      return loadLevel(withLog({ ...state, hero }, entry), state.levelIndex + 1)
+      return advanceTo(withLog({ ...state, hero }, entry), state.levelIndex + 1)
+    }
+
+    case 'RESOLVE_BOSS_CHOICE': {
+      if (state.phase !== 'BossChoice' || state.bossPending == null) return state
+      const idx = state.bossPending
+      if (action.boss) return loadLevel(state, idx, true)
+      return loadLevel(withLog(state, { t: 'bossSkipped' }), idx)
     }
 
     case 'ABILITY_WIZARD_REROLL': {
@@ -510,6 +542,19 @@ export function gameReducer(state: GameState, action: Action): GameState {
 
     case 'SET_TREASURE':
       return { ...state, settings: { ...state.settings, treasureChests: action.enabled } }
+
+    case 'SET_EXPANSION': {
+      // Turning the expansion off must not strand the hero on a now-hidden class.
+      const classId =
+        !action.enabled && state.hero.classId && EXPANSION_CLASSES.has(state.hero.classId)
+          ? null
+          : state.hero.classId
+      return {
+        ...state,
+        hero: { ...state.hero, classId },
+        settings: { ...state.settings, expansion: action.enabled },
+      }
+    }
 
     case 'RESTART':
       return createInitialState(state.settings)

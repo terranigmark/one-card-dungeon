@@ -12,14 +12,19 @@ export function isWall(state: GameState, c: Coord): boolean {
   return state.walls.some((w) => coordEq(w, c))
 }
 
+/** A tile removed from a boss arena — off the board entirely (M'Guf-yn Returns). */
+export function isVoid(state: GameState, c: Coord): boolean {
+  return state.voids.some((v) => coordEq(v, c))
+}
+
 /** An unopened Treasure Chest sits here — it blocks like a wall until opened. */
 export function unopenedChestAt(state: GameState, c: Coord): boolean {
   return !!state.chest && !state.chest.opened && coordEq(state.chest.pos, c)
 }
 
-/** A static obstacle for movement / range: a wall or an unopened chest. */
+/** A static obstacle for movement / range: a wall, a void, or an unopened chest. */
 export function blocksMove(state: GameState, c: Coord): boolean {
-  return isWall(state, c) || unopenedChestAt(state, c)
+  return isWall(state, c) || isVoid(state, c) || unopenedChestAt(state, c)
 }
 
 export function monsterAt(state: GameState, c: Coord): Monster | undefined {
@@ -49,7 +54,7 @@ export function rangeTraverse(state: GameState): Passable {
  *  Endpoints are filtered out inside hasLineOfSight, so passing the full list is
  *  safe (a chest you are targeting won't block sight to itself). */
 export function losBlockers(state: GameState): Coord[] {
-  const blockers = [...state.walls, ...state.monsters.map((m) => m.pos)]
+  const blockers = [...state.walls, ...state.voids, ...state.monsters.map((m) => m.pos)]
   if (state.chest && !state.chest.opened) blockers.push(state.chest.pos)
   return blockers
 }
@@ -58,7 +63,7 @@ export function losBlockers(state: GameState): Coord[] {
 export function monsterCanHitHero(state: GameState, m: Monster): boolean {
   const r = pathCost(m.pos, state.hero.pos, (c) => !blocksMove(state, c))
   if (r === null || r > m.range) return false
-  const blockers: Coord[] = [...state.walls]
+  const blockers: Coord[] = [...state.walls, ...state.voids]
   if (state.chest && !state.chest.opened) blockers.push(state.chest.pos)
   for (const other of state.monsters) if (other.id !== m.id) blockers.push(other.pos)
   return hasLineOfSight(m.pos, state.hero.pos, blockers)

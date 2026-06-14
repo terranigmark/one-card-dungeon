@@ -32,6 +32,13 @@ const en = {
     banner:
       "Single-player · You control the hero (green die); monsters (red dice) are AI-controlled. A " +
       "die's number is its current Health.",
+    modeLabel: 'Game mode',
+    modeClassic: 'Classic',
+    modeExpansion: "M'Guf-yn Returns",
+    modeClassicHint: 'The original 12-level campaign — four classes, no chests, no bosses.',
+    modeExpansionHint:
+      'Adds four new classes, Treasure Chests, and an optional 12-sided boss on levels 3, 6, 9 and 12.',
+    gotoClass: (name: string) => `Show ${name}`,
   },
 
   classes: {
@@ -115,6 +122,20 @@ const en = {
     skeleton: { one: 'Skeleton', many: 'Skeletons' },
     orc: { one: 'Orc', many: 'Orcs' },
     demon: { one: 'Demon', many: 'Demons' },
+    lizardTroll: { one: 'Lizard Troll', many: 'Lizard Trolls' },
+    skeletonWarrior: { one: 'Skeleton Warrior', many: 'Skeleton Warriors' },
+    giantMantis: { one: 'Giant Mantis', many: 'Giant Mantises' },
+    mgufyn: { one: "M'Guf-yn", many: "M'Guf-yn" },
+  },
+
+  /** Boss arena opt-in (M'Guf-yn Returns). */
+  bossChoice: {
+    title: (level: number) => `Level ${level}: A boss stirs`,
+    hint:
+      'Face the boss in its shrunken arena (the far corners collapse), or take the regular path ' +
+      'for this level. Your choice.',
+    face: 'Face the boss ⚔',
+    skip: 'Take the regular path',
   },
 
   turn: {
@@ -254,6 +275,8 @@ const en = {
     clericBless: (dice: number[]) => `Cleric's blessing: dice become ${dice.join(', ')}`,
     knightDouble: "Knight may stack two dice on one skill this turn",
     rogueBoost: (dice: number[]) => `Rogue sharpens the dice to ${dice.join(', ')}`,
+    bossEntered: (enemy: string) => `A boss bars the way: ${enemy} (12-sided)!`,
+    bossSkipped: 'You take the regular path, leaving the boss behind',
   },
 }
 
@@ -273,6 +296,13 @@ const es: Messages = {
     banner:
       'Un jugador · Tú controlas al héroe (dado verde); los monstruos (dados rojos) los controla ' +
       'la IA. El número de un dado es su Salud actual.',
+    modeLabel: 'Modo de juego',
+    modeClassic: 'Clásico',
+    modeExpansion: "M'Guf-yn Returns",
+    modeClassicHint: 'La campaña original de 12 niveles: cuatro clases, sin cofres ni jefes.',
+    modeExpansionHint:
+      'Añade cuatro clases nuevas, cofres del tesoro y un jefe opcional de 12 caras en los niveles 3, 6, 9 y 12.',
+    gotoClass: (name: string) => `Mostrar ${name}`,
   },
 
   classes: {
@@ -356,6 +386,19 @@ const es: Messages = {
     skeleton: { one: 'Esqueleto', many: 'Esqueletos' },
     orc: { one: 'Orco', many: 'Orcos' },
     demon: { one: 'Demonio', many: 'Demonios' },
+    lizardTroll: { one: 'Trol Lagarto', many: 'Troles Lagarto' },
+    skeletonWarrior: { one: 'Esqueleto Guerrero', many: 'Esqueletos Guerreros' },
+    giantMantis: { one: 'Mantis Gigante', many: 'Mantis Gigantes' },
+    mgufyn: { one: "M'Guf-yn", many: "M'Guf-yn" },
+  },
+
+  bossChoice: {
+    title: (level: number) => `Nivel ${level}: un jefe acecha`,
+    hint:
+      'Enfréntate al jefe en su arena reducida (las esquinas lejanas se hunden) o toma el camino ' +
+      'normal de este nivel. Tú decides.',
+    face: 'Enfrentar al jefe ⚔',
+    skip: 'Tomar el camino normal',
   },
 
   turn: {
@@ -502,6 +545,8 @@ const es: Messages = {
     clericBless: (dice: number[]) => `Bendición del Clérigo: los dados pasan a ${dice.join(', ')}`,
     knightDouble: 'El Caballero puede acumular dos dados en una característica este turno',
     rogueBoost: (dice: number[]) => `El Pícaro afila los dados a ${dice.join(', ')}`,
+    bossEntered: (enemy: string) => `¡Un jefe cierra el paso: ${enemy} (12 caras)!`,
+    bossSkipped: 'Tomas el camino normal y dejas atrás al jefe',
   },
 }
 
@@ -563,5 +608,9 @@ export function formatLog(entry: LogEntry, t: Messages): string {
       return t.log.knightDouble
     case 'rogueBoost':
       return t.log.rogueBoost(entry.dice)
+    case 'bossEntered':
+      return t.log.bossEntered(t.enemy[entry.kind].one)
+    case 'bossSkipped':
+      return t.log.bossSkipped
   }
 }

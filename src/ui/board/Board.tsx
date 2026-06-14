@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { allCoords, coordEq, coordKey } from '../../engine/grid'
-import { LEVELS } from '../../engine/levels'
+import { BOSS_LEVELS, LEVELS } from '../../engine/levels'
 import { attackableTargets, chestOpenable, reachableTiles } from '../../engine/selectors'
-import { isWall, monsterAt, unopenedChestAt } from '../../engine/board'
+import { isVoid, isWall, monsterAt, unopenedChestAt } from '../../engine/board'
 import { useDispatch, useGameState } from '../../state/hooks'
 import { useT } from '../../i18n'
 import type { Coord } from '../../engine/types'
@@ -14,6 +14,9 @@ export function Board() {
   const dispatch = useDispatch()
   const t = useT()
   const cfg = LEVELS[state.levelIndex]
+  // A boss arena is in play whenever the level has removed corners; tint the
+  // board to match the printed card (red lava for 3/9, blue for 6/12).
+  const bossPalette = state.voids.length > 0 ? BOSS_LEVELS[cfg.level]?.palette : undefined
   const interactive = state.phase === 'Adventurer'
   const [failedSides, setFailedSides] = useState<Record<number, boolean>>({})
 
@@ -39,13 +42,13 @@ export function Board() {
   }
 
   return (
-    <div className="board-wrap">
+    <div className="board-wrap" data-boss-palette={bossPalette}>
       <div
         className="board-bg"
         data-side={cfg.side}
         style={{ transform: `rotate(${cfg.orientation}deg)` }}
       >
-        {!failedSides[cfg.side] && (
+        {!bossPalette && !failedSides[cfg.side] && (
           <img
             src={CARD_IMAGES[cfg.side]}
             alt=""
@@ -55,6 +58,8 @@ export function Board() {
       </div>
       <div className="board-grid">
         {allCoords().map((c) => {
+          const hole = isVoid(state, c)
+          if (hole) return <Tile key={coordKey(c)} hole wall={false} hero={false} heroHealth={0} highlight={null} interactive={false} onClick={() => {}} />
           const wall = isWall(state, c)
           const hero = state.hero.pos.x === c.x && state.hero.pos.y === c.y
           const mon = monsterAt(state, c)
