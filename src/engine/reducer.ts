@@ -29,6 +29,9 @@ import { getStrategy } from './ai'
 
 const HERO_BASE = { speed: 1, attack: 1, defense: 1, range: 2 }
 
+/** God-mode skill totals: enough Speed/Attack/Range to do anything in one turn. */
+const DEBUG_TOTALS = { speed: 99, attack: 99, defense: 99, range: 99 }
+
 function emptyEnergy(): EnergyDice {
   return { rolled: [], assignment: {}, secondary: {}, rangerUnlocked: false, knightUnlocked: false, clericBoosted: false }
 }
@@ -230,6 +233,20 @@ export function gameReducer(state: GameState, action: Action): GameState {
 
     case 'CONFIRM_ENERGY': {
       if (state.phase !== 'Energy') return state
+      // God-mode skips the assignment requirement and grants huge totals so a
+      // developer can roam and one-shot freely without fiddling with dice.
+      if (state.debug) {
+        const totals = { ...DEBUG_TOTALS }
+        return withLog(
+          {
+            ...state,
+            turn: { totals, speedLeft: totals.speed, attackLeft: totals.attack },
+            chestSpend: null,
+            phase: 'Adventurer',
+          },
+          { t: 'turnTotals', speed: totals.speed, attack: totals.attack, defense: totals.defense, range: totals.range },
+        )
+      }
       if (!diceAllAssigned(state.energy)) return state
       // Only spend chest loot the player actually still has.
       const spend =
@@ -281,14 +298,17 @@ export function gameReducer(state: GameState, action: Action): GameState {
       if (state.phase !== 'Adventurer' || !state.turn) return state
       const m = state.monsters.find((x) => x.id === action.targetId)
       if (!m) return state
-      const r = pathCost(state.hero.pos, m.pos, rangeTraverse(state))
-      if (r === null || r > state.turn.totals.range) return state
-      if (!hasLineOfSight(state.hero.pos, m.pos, losBlockers(state))) return state
-      const cost = attackCostPerHit(m.defense)
+      // God-mode: ignore range / line-of-sight / cost and one-shot the target.
+      if (!state.debug) {
+        const r = pathCost(state.hero.pos, m.pos, rangeTraverse(state))
+        if (r === null || r > state.turn.totals.range) return state
+        if (!hasLineOfSight(state.hero.pos, m.pos, losBlockers(state))) return state
+      }
+      const cost = state.debug ? 0 : attackCostPerHit(m.defense)
       if (state.turn.attackLeft < cost) return state
 
       const turn = { ...state.turn, attackLeft: state.turn.attackLeft - cost }
-      const newHealth = m.health - 1
+      const newHealth = state.debug ? 0 : m.health - 1
       let monsters: Monster[]
       let entry: LogEntry
       if (newHealth <= 0) {
@@ -354,7 +374,7 @@ export function gameReducer(state: GameState, action: Action): GameState {
       if (state.phase !== 'MonsterAttack' || !state.turn) return state
       const attackers = state.monsters.filter((m) => monsterCanHitHero(state, m))
       const total = attackers.reduce((s, m) => s + m.attack, 0)
-      const dmg = damageToHero(total, state.turn.totals.defense)
+      const dmg = state.debug ? 0 : damageToHero(total, state.turn.totals.defense)
       const newHealth = state.hero.health - dmg
       const entry: LogEntry = { t: 'monsterAttack', total, defense: state.turn.totals.defense, damage: dmg }
       if (newHealth <= 0) {
@@ -558,6 +578,18 @@ export function gameReducer(state: GameState, action: Action): GameState {
 
     case 'RESTART':
       return createInitialState(state.settings)
+
+    case 'TOGGLE_DEBUG':
+      return { ...state, debug: !state.debug }
+
+    case 'DEBUG_JUMP_LEVEL': {
+      // Developer warp: jump straight into any level (or its boss arena),
+      // bypassing the normal BossChoice / reward flow. Only honoured in god-mode.
+      if (!state.debug) return state
+      if (action.idx < 0 || action.idx >= TOTAL_LEVELS) return state
+      const useBoss = !!action.boss && !!BOSS_LEVELS[action.idx + 1]
+      return loadLevel(state, action.idx, useBoss)
+    }
 
     default:
       return state

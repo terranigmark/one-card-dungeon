@@ -40,3 +40,6 @@ export type Action =
   | { type: 'SET_TREASURE'; enabled: boolean }
   | { type: 'SET_EXPANSION'; enabled: boolean }
   | { type: 'RESTART' }
+  // hidden developer god-mode (cheat code; never surfaced to players)
+  | { type: 'TOGGLE_DEBUG' }
+  | { type: 'DEBUG_JUMP_LEVEL'; idx: number; boss?: boolean }

@@ -272,7 +272,7 @@ export function TurnPanel() {
       </div>
       <ClassAbilityRow selected={selected} />
       <ChestSpendRow />
-      <button className="primary" disabled={!allAssigned} onClick={() => dispatch({ type: 'CONFIRM_ENERGY' })}>
+      <button className="primary" disabled={!allAssigned && !state.debug} onClick={() => dispatch({ type: 'CONFIRM_ENERGY' })}>
         {t.turn.confirm}
       </button>
     </div>

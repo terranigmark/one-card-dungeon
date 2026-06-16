@@ -239,4 +239,11 @@ export interface GameState {
    * regular path; null at all other times.
    */
   bossPending: number | null
+  /**
+   * Hidden developer "god mode". Not surfaced anywhere in the normal UI — it is
+   * toggled by a secret cheat code (see `App.tsx`) and lets a developer explore
+   * and test levels: huge skill totals (free movement / range / attack), no
+   * incoming damage, one-hit kills and level warping. Never enabled for players.
+   */
+  debug?: boolean
 }

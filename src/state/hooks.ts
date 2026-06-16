@@ -16,6 +16,7 @@ export const useLevelIndex = () => useGameStore((s) => s.state.levelIndex)
 export const useClassState = () => useGameStore((s) => s.state.classState)
 export const useSettings = () => useGameStore((s) => s.state.settings)
 export const useLog = () => useGameStore((s) => s.state.log)
+export const useDebug = () => useGameStore((s) => s.state.debug ?? false)
 
 /** Escape hatch for components that genuinely need the whole state (selectors). */
 export const useGameState = () => useGameStore((s) => s.state)
